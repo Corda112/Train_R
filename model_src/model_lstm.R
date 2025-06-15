@@ -68,7 +68,8 @@ lstm_net <- nn_module(
     
     # 取最後一個時間步的輸出
     # lstm_out[[1]]: [batch_size, seq_len, hidden_size * directions]
-    last_output <- lstm_out[[1]][, -1, ]  # [batch_size, hidden_size * directions]
+    seq_len <- dim(lstm_out[[1]])[2]
+    last_output <- lstm_out[[1]][, seq_len, ]  # [batch_size, hidden_size * directions]
     
     # 全連接層
     out <- self$dropout(last_output)

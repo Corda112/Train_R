@@ -66,10 +66,12 @@ train_single_data_type <- function(data_type, models = c("lgbm", "lstm"),
   tryCatch({
     if(config$is_large) {
       # 大檔案模式 - 載入第一個區塊進行訓練
+      # 注意：這是為了記憶體管理的設計選擇，可能影響模型品質
       data_loader <- load_data_auto(config$path, data_type = data_type, verbose = verbose)
       
       if(verbose) {
         cat("⚠️  大檔案模式：僅使用第一個區塊進行訓練\n")
+        cat("💡 提示：如需使用完整資料，請考慮增加系統記憶體或分批訓練\n")
       }
       
       # 獲取第一個區塊
