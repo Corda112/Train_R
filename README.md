@@ -32,6 +32,7 @@ Rscript run_aqi_training.R --max-files 5
 - `model_lgbm.R` - LightGBM模型
 - `model_lstm.R` - LSTM模型
 - `pipeline.R` - 訓練管線
+- `explain.R` - 模型解釋工具
 
 ### 資料目錄
 - `DATA/` - 原始資料
@@ -68,4 +69,19 @@ Rscript run_aqi_training.R --max-files 5
 - 必要套件: data.table, lightgbm, torch, Matrix, abind, caret, jsonlite
 
 ---
-*系統就緒，可開始 AQI 模型訓練* 
+*系統就緒，可開始 AQI 模型訓練*
+
+## 模型解釋流程
+
+訓練完成後，可使用 `model_src/explain.R` 產生特徵重要度與 LSTM 訓練歷史：
+
+```bash
+Rscript -e "source('model_src/explain.R');\
+  reg <- scan_model_registry();\
+  generate_global_importance(reg, 'model_outputs/metrics/global_importance.csv');\
+  collect_lstm_history(reg, 'model_outputs/metrics/lstm_history.csv')"
+```
+
+上述指令會掃描 `model_outputs/models/` 的模型檔，
+統整 LightGBM 原始特徵重要度與 LSTM 損失曲線，
+輸出至 `model_outputs/metrics/` 以便後續視覺化。
