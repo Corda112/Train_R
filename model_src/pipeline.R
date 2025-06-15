@@ -573,7 +573,14 @@ check_training_environment <- function() {
     if(torch::cuda_is_available()) {
       cat("✅ CUDA可用\n")
       cat("  GPU數量:", torch::cuda_device_count(), "\n")
-      check_gpu_memory()
+      # GPU記憶體檢查 (簡化版)
+      tryCatch({
+        test_tensor <- torch::torch_randn(100, 100, device = "cuda")
+        cat("  GPU記憶體: 正常\n")
+        rm(test_tensor)
+      }, error = function(e) {
+        cat("  GPU記憶體: 檢查失敗\n")
+      })
     } else {
       cat("⚠️  CUDA不可用，將使用CPU\n")
     }

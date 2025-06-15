@@ -125,9 +125,9 @@ LSTM_PARAMS <- list(
   patience = 15,
   min_delta = 1e-4,
   
-  # 設備配置
-  device = "cuda",        # 優先使用GPU
-  mixed_precision = TRUE, # 混合精度訓練
+  # 設備配置 (更新: CUDA 12.4 + cuDNN 9.1.1.17)
+  device = "cuda",        # GPU可用！
+  mixed_precision = TRUE, # 支援混合精度訓練
   
   # 優化器參數
   optimizer = "adam",
@@ -207,7 +207,7 @@ MODEL_CONFIGS <- list(
   lstm = list(
     name = "lstm", 
     display_name = "LSTM",
-    device = "gpu",
+    device = "gpu",  # 更新: GPU完全可用！
     params = LSTM_PARAMS,
     requires_flatten = FALSE,
     supports_feature_importance = FALSE
