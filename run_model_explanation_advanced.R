@@ -210,9 +210,9 @@ tryCatch({
     
     # 執行重要度分析
     importance_results <- analyze_feature_importance_batch(
-      models = models,
+      models_info = models,
       output_dir = opt$`output-dir`,
-      verbose = opt$verbose
+      max_models = opt$`max-models`
     )
     
     cat("✅ 特徵重要度分析完成\n")
@@ -244,10 +244,9 @@ tryCatch({
     
     # 執行 SHAP 分析
     shap_results <- analyze_shap_batch(
-      models = models,
+      models_info = models,
       sample_size = opt$`shap-samples`,
-      output_dir = opt$`output-dir`,
-      verbose = opt$verbose
+      output_dir = opt$`output-dir`
     )
     
     cat("✅ SHAP 分析完成\n")
@@ -280,19 +279,18 @@ tryCatch({
     # 2. 特徵重要度分析
     cat("\n2️⃣ 特徵重要度分析...\n")
     importance_results <- analyze_feature_importance_batch(
-      models = models,
+      models_info = models,
       output_dir = opt$`output-dir`,
-      verbose = opt$verbose
+      max_models = opt$`max-models`
     )
     
     # 3. SHAP 分析（如果啟用且模組可用）
     if(opt$`enable-shap` && advanced_module_loaded) {
       cat("\n3️⃣ SHAP 解釋性分析...\n")
       shap_results <- analyze_shap_batch(
-        models = models,
+        models_info = models,
         sample_size = opt$`shap-samples`,
-        output_dir = opt$`output-dir`,
-        verbose = opt$verbose
+        output_dir = opt$`output-dir`
       )
     }
     
@@ -300,10 +298,8 @@ tryCatch({
     if(opt$`enable-html` && advanced_module_loaded) {
       cat("\n4️⃣ 生成 HTML 報告...\n")
       html_report <- generate_html_report(
-        models = models,
-        output_dir = opt$`output-dir`,
-        include_shap = opt$`enable-shap`,
-        verbose = opt$verbose
+        registry = models,
+        output_dir = opt$`output-dir`
       )
     }
     

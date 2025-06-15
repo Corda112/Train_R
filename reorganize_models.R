@@ -117,6 +117,12 @@ identify_file_type <- function(file_name) {
     return("importance")
   } else if(grepl("_native\\.txt$", file_name)) {
     return("native")
+  } else if(grepl("_architecture\\.rds$", file_name)) {
+    return("architecture")
+  } else if(grepl("_history\\.rds$", file_name)) {
+    return("history")
+  } else if(grepl("_state\\.pt$", file_name)) {
+    return("state")
   } else {
     return("other")
   }
@@ -154,7 +160,10 @@ organize_model_group <- function(file_group, target_dir, model_id) {
     model = "model.rds",
     importance = "importance.csv",
     original_importance = "original_importance.csv",
-    native = "native.txt"
+    native = "native.txt",
+    architecture = "architecture.rds",
+    history = "history.rds",
+    state = "state.pt"
   )
   
   moved_files <- 0

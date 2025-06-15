@@ -27,12 +27,23 @@ scan_model_outputs <- function(models_dir = "model_outputs/models/") {
   
   cat("📂 掃描模型輸出目錄:", models_dir, "\n")
   
-  # 掃描所有完整模型檔案
+  # 修復：掃描實際的檔案命名模式
   complete_files <- list.files(models_dir, pattern = "_complete\\.rds$", full.names = TRUE)
   
   if(length(complete_files) == 0) {
-    stop("未找到任何完整模型檔案 (*_complete.rds)")
+    cat("⚠️ 未找到 *_complete.rds 格式檔案，嘗試掃描實際格式...\n")
+    # 掃描實際的檔案格式: *.rds_complete.rds 和 *.pt_complete.rds
+    complete_files <- c(
+      list.files(models_dir, pattern = "\\.rds_complete\\.rds$", full.names = TRUE),
+      list.files(models_dir, pattern = "\\.pt_complete\\.rds$", full.names = TRUE)
+    )
   }
+  
+  if(length(complete_files) == 0) {
+    stop("未找到任何完整模型檔案 (*_complete.rds 或 *.rds_complete.rds 或 *.pt_complete.rds)")
+  }
+  
+  cat("✅ 找到", length(complete_files), "個完整模型檔案\n")
   
   # 解析檔案名稱
   models_info <- data.table()
@@ -40,28 +51,48 @@ scan_model_outputs <- function(models_dir = "model_outputs/models/") {
   for(file_path in complete_files) {
     file_name <- basename(file_path)
     
-    # 解析檔案名稱: {model_type}_{dataset_type}_{station_name}_{timestamp}_complete.rds
-    parts <- strsplit(tools::file_path_sans_ext(file_name), "_")[[1]]
+    # 修復：解析實際的檔案名稱格式
+    # 格式1: model_type_dataset_type_details.rds_complete.rds
+    # 格式2: model_type_dataset_type_details.pt_complete.rds
     
-    if(length(parts) >= 4) {
+    # 移除 _complete.rds 後綴
+    base_name <- gsub("_complete\\.rds$", "", file_name)
+    # 移除 .rds_complete.rds 後綴
+    base_name <- gsub("\\.rds_complete\\.rds$", "", base_name)
+    # 移除 .pt_complete.rds 後綴  
+    base_name <- gsub("\\.pt_complete\\.rds$", "", base_name)
+    # 移除剩餘的 .rds 和 .pt 擴展名
+    base_name <- gsub("\\.(rds|pt)$", "", base_name)
+    
+    # 解析基本資訊
+    parts <- strsplit(base_name, "_")[[1]]
+    
+    if(length(parts) >= 2) {
       model_type <- parts[1]
       dataset_type <- parts[2]
-      station_name <- paste(parts[3:(length(parts)-2)], collapse = "_")
-      timestamp <- parts[length(parts)-1]
       
-      # 構建路徑前綴
-      path_prefix <- file.path(models_dir, paste(model_type, dataset_type, station_name, timestamp, sep = "_"))
+      # 處理剩餘部分作為詳細名稱
+      if(length(parts) > 2) {
+        detail_name <- paste(parts[3:length(parts)], collapse = "_")
+      } else {
+        detail_name <- "default"
+      }
+      
+      # 生成模型ID
+      model_id <- paste(model_type, dataset_type, detail_name, sep = "_")
+      
+      # 構建路徑前綴（移除檔案擴展名）
+      path_prefix <- file.path(models_dir, gsub("_complete\\.rds$|\\.rds_complete\\.rds$|\\.pt_complete\\.rds$", "", file_name))
       
       # 檢查相關檔案是否存在
       importance_file <- paste0(path_prefix, "_importance.csv")
       original_importance_file <- paste0(path_prefix, "_original_importance.csv")
       
       models_info <- rbindlist(list(models_info, data.table(
-        id = paste(model_type, dataset_type, station_name, timestamp, sep = "_"),
+        id = model_id,
         model_type = model_type,
         dataset_type = dataset_type,
-        station_name = station_name,
-        timestamp = timestamp,
+        detail_name = detail_name,
         path_prefix = path_prefix,
         complete_file = file_path,
         importance_file = if(file.exists(importance_file)) importance_file else NA,
@@ -69,12 +100,16 @@ scan_model_outputs <- function(models_dir = "model_outputs/models/") {
         exists_importance = file.exists(importance_file),
         exists_original_importance = file.exists(original_importance_file)
       )))
+    } else {
+      cat("⚠️ 無法解析檔案名稱:", file_name, "\n")
     }
   }
   
   cat("✅ 掃描完成:", nrow(models_info), "個模型\n")
-  cat("  LightGBM:", sum(models_info$model_type == "lgbm"), "個\n")
-  cat("  LSTM:", sum(models_info$model_type == "lstm"), "個\n")
+  if(nrow(models_info) > 0) {
+    cat("  LightGBM:", sum(models_info$model_type == "lgbm"), "個\n")
+    cat("  LSTM:", sum(models_info$model_type == "lstm"), "個\n")
+  }
   
   return(models_info)
 }
@@ -92,7 +127,7 @@ create_model_registry <- function(models_info, output_path = "model_outputs/expl
     dir.create(output_dir, recursive = TRUE)
   }
   
-  registry <- models_info[, .(id, model_type, dataset_type, station_name, timestamp, path_prefix)]
+  registry <- models_info[, .(id, model_type, dataset_type, detail_name, path_prefix)]
   
   # 添加模型詳細資訊欄位
   registry$n_features <- NA_integer_
