@@ -32,11 +32,8 @@ scan_model_outputs <- function(models_dir = "model_outputs/models/") {
   
   if(length(complete_files) == 0) {
     cat("⚠️ 未找到 *_complete.rds 格式檔案，嘗試掃描實際格式...\n")
-    # 掃描實際的檔案格式: *.rds_complete.rds 和 *.pt_complete.rds
-    complete_files <- c(
-      list.files(models_dir, pattern = "\\.rds_complete\\.rds$", full.names = TRUE),
-      list.files(models_dir, pattern = "\\.pt_complete\\.rds$", full.names = TRUE)
-    )
+    # 使用更簡單的模式掃描所有complete.rds檔案
+    complete_files <- list.files(models_dir, pattern = "complete\\.rds$", full.names = TRUE)
   }
   
   if(length(complete_files) == 0) {
