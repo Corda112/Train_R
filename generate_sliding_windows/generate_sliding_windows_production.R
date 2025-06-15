@@ -28,7 +28,7 @@ DATA_DIRS <- list(
   separate = "DATA/Separate",
   separate_norm = "DATA/Separate_Nomorlization", 
   combine = "DATA/Combine",
-  combine_norm = "DATA/Combine_Nomolization"  # 修正拼字錯誤
+  combine_norm = "DATA/Combine_Nomorlization"  # 修正拼字錯誤
 )
 
 # 按原始資料結構創建分類輸出目錄
@@ -501,7 +501,7 @@ get_output_info <- function(file_path) {
   # 按優先順序判斷，避免pattern疊合，使用統一路徑常量
   if(grepl("Separate_Nomorlization", file_path, fixed = TRUE)) {
     return(list(dir = output_dirs$separate_norm, type = "separate_norm"))
-  } else if(grepl("Combine_Nomolization|Nomorlization_Combine", file_path)) {
+  } else if(grepl("Combine_Nomorlization", file_path)) {
     return(list(dir = output_dirs$combine_norm, type = "combine_norm"))
   } else if(grepl("Separate", file_path, fixed = TRUE)) {
     return(list(dir = output_dirs$separate, type = "separate"))
