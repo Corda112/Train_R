@@ -619,32 +619,28 @@ check_training_environment <- function() {
 # 6. 主要執行函數 (符合規劃要求)
 # ================================================================================
 
-#' 執行完整的四資料×兩模型訓練管線
-#' @param models 要訓練的模型列表 (預設 c("lgbm", "lstm"))
-#' @param max_files 每種資料類型的最大檔案數 (NULL = 全部)
+#' 執行完整訓練管線 (支援大檔案模式)
+#' @param models 要訓練的模型類型向量
+#' @param max_files 每種資料類型的最大檔案數量
 #' @param verbose 是否顯示詳細資訊
-#' @return 完整的訓練結果
+#' @return 完整的管線結果
 run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verbose = TRUE) {
+  pipeline_start_time <- Sys.time()
   
   if(verbose) {
-    cat("\n", paste(rep("=", 80), collapse = ""), "\n")
+    cat(" ================================================================================ \n")
     cat("🚀 開始執行完整訓練管線\n")
-    cat("📋 四資料類型 × ", length(models), " 模型\n")
-    cat(paste(rep("=", 80), collapse = ""), "\n")
-  }
-  
-  # 設定隨機種子
-  set.seed(RANDOM_SEEDS$global)
-  if("torch" %in% loadedNamespaces()) {
-    torch::torch_manual_seed(RANDOM_SEEDS$torch)
+    cat("📋", length(names(DATA_TYPES)), "資料類型 × ", length(models), " 模型\n")
+    cat("================================================================================\n")
   }
   
   # 檢查環境
-  if(verbose) {
-    check_training_environment()
-  }
+  check_training_environment()
   
-  # 定義資料資料夾 (符合規劃要求)
+  # 初始化結果容器
+  all_results <- list()
+  
+  # 獲取資料夾配置
   data_folders <- list(
     separate = DATA_PATHS$separate,
     separate_norm = DATA_PATHS$separate_norm,
@@ -652,12 +648,8 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
     combine_norm = DATA_PATHS$combine_norm
   )
   
-  # 初始化結果儲存
-  all_results <- list()
-  pipeline_start_time <- Sys.time()
-  
-  # 主要循環：四資料類型
-  for (dtype in names(data_folders)) {
+  # 處理每種資料類型
+  for(dtype in names(data_folders)) {
     if(verbose) {
       cat("\n", paste(rep("=", 60), collapse = ""), "\n")
       cat("📂 處理資料類型:", toupper(dtype), "\n")
@@ -674,149 +666,385 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
       next
     }
     
-    # 找到所有RDS檔案
-    files <- list.files(data_folders[[dtype]], pattern = "_windows\\.rds$", full.names = TRUE)
-    
-    if(length(files) == 0) {
+    # 檢查資料類型配置
+    config <- DATA_TYPES[[dtype]]
+    if(is.null(config)) {
       if(verbose) {
-        cat("⚠️  跳過", dtype, ": 沒有找到RDS檔案\n")
+        cat("⚠️  跳過", dtype, ": 未知的資料類型\n")
       }
       all_results[[dtype]] <- NULL
       next
     }
     
-    # 限制檔案數量（如果指定）
-    if(!is.null(max_files) && length(files) > max_files) {
-      files <- files[1:max_files]
+    # 根據資料類型選擇處理模式
+    if(config$is_large) {
+      # 大檔案模式處理
       if(verbose) {
-        cat("📋 限制處理前", max_files, "個檔案\n")
-      }
-    }
-    
-    # 處理每個檔案
-    dtype_results <- list()
-    
-    for (fp in files) {
-      if(verbose) {
-        cat("\n📄 處理檔案:", basename(fp), "\n")
+        cat("🔍 檢測到大檔案模式:", config$display_name, "\n")
       }
       
+      # 檢查是否有索引檔案和chunk檔案
+      index_files <- list.files(data_folders[[dtype]], pattern = "_index\\.rds$", full.names = TRUE)
+      chunk_files <- list.files(data_folders[[dtype]], pattern = "_chunk\\d+\\.rds$", full.names = TRUE)
+      
+      if(length(index_files) == 0 || length(chunk_files) == 0) {
+        if(verbose) {
+          cat("⚠️  跳過", dtype, ": 大檔案模式但缺少索引或chunk檔案\n")
+          cat("    索引檔案:", length(index_files), "個\n")
+          cat("    Chunk檔案:", length(chunk_files), "個\n")
+        }
+        all_results[[dtype]] <- NULL
+        next
+      }
+      
+      # 處理大檔案 - 改進策略：使用多個chunk而非僅第一個
+      dtype_results <- list()
+      
       tryCatch({
-        # 載入資料 (使用統一介面)
-        ds <- load_windows(fp, verbose = verbose)
+        if(verbose) {
+          cat("📊 載入大檔案索引...\n")
+        }
         
-        # 時序切分
-        sp <- time_cv(ds, test_ratio = SPLIT_CONFIG$test_ratio, 
-                     val_ratio = SPLIT_CONFIG$val_ratio, verbose = verbose)
+        # 載入索引
+        index <- readRDS(index_files[1])
+        total_chunks <- length(chunk_files)
         
-        # 提取資料集
-        datasets <- extract_all_sets(ds, sp)
+        # 改進的chunk選擇策略
+        chunks_to_use <- if(!is.null(max_files) && max_files < total_chunks) {
+          # 如果限制檔案數，均勻選擇chunk
+          selected_indices <- round(seq(1, total_chunks, length.out = max_files))
+          chunk_files[selected_indices]
+        } else {
+          # 使用所有chunk，但限制最大數量以避免記憶體問題
+          max_chunks <- min(total_chunks, 5)  # 最多使用5個chunk
+          chunk_files[1:max_chunks]
+        }
         
-        # 訓練模型
-        file_results <- list()
+        if(verbose) {
+          cat("📋 選擇", length(chunks_to_use), "/", total_chunks, "個chunk進行訓練\n")
+        }
         
-        # 模型循環
-        if ("lgbm" %in% models) {
+        # 處理選中的chunk
+        for(i in seq_along(chunks_to_use)) {
+          chunk_file <- chunks_to_use[i]
+          chunk_name <- paste0("chunk_", sprintf("%02d", i))
+          
           if(verbose) {
-            cat("\n🌳 訓練 LightGBM 模型...\n")
+            cat("\n📄 處理chunk:", basename(chunk_file), "\n")
           }
           
           tryCatch({
-            lgbm_model <- train_lgbm(
-              train_dataset = datasets$train,
-              val_dataset = datasets$val,
-              params = LGBM_PARAMS,
-              verbose = verbose
-            )
+            # 載入chunk資料
+            chunk_data <- readRDS(chunk_file)
             
-            # 預測和評估
-            lgbm_pred <- predict_lgbm(lgbm_model, datasets$test, verbose = verbose)
-            lgbm_eval <- evaluate_predictions(datasets$test$y, lgbm_pred)
+            # 檢查chunk資料結構並適配
+            if("X_raw" %in% names(chunk_data) && "y_raw" %in% names(chunk_data)) {
+              # chunk格式：使用X_raw和y_raw
+              x_data <- chunk_data$X_raw
+              y_data <- chunk_data$y_raw
+              
+              # 生成特徵名稱
+              n_features <- dim(x_data)[3]
+              features <- paste0("feature_", 1:n_features)
+              
+            } else if("x" %in% names(chunk_data) && "y" %in% names(chunk_data)) {
+              # 標準格式
+              x_data <- chunk_data$x
+              y_data <- chunk_data$y
+              features <- if(is.null(chunk_data$features)) paste0("feature_", 1:dim(x_data)[3]) else chunk_data$features
+              
+            } else {
+              stop("無法識別的chunk資料格式")
+            }
             
-            # 儲存模型
-            model_name <- paste0("lgbm_", dtype, "_", tools::file_path_sans_ext(basename(fp)))
-            model_path <- file.path(OUTPUT_PATHS$models, paste0(model_name, ".rds"))
-            save_lgbm_model(lgbm_model, model_path, save_importance = TRUE)
-            
-            file_results$lgbm <- list(
-              model = lgbm_model,
-              predictions = lgbm_pred,
-              evaluation = lgbm_eval,
-              model_path = model_path
+            # 創建資料集物件
+            ds <- create_dataset(
+              x = x_data,
+              y = y_data,
+              features = features,
+              data_type = dtype,
+              metadata = list(
+                source_file = basename(chunk_file),
+                chunk_index = i,
+                total_chunks = length(chunks_to_use),
+                is_large_file_chunk = TRUE
+              )
             )
             
             if(verbose) {
-              cat("✅ LightGBM 完成 - RMSE:", round(lgbm_eval$rmse, 4), "\n")
+              cat("✅ Chunk載入完成:", format(ds$n_windows, big.mark = ","), "個窗口\n")
             }
+            
+            # 時序切分
+            sp <- time_cv(ds, test_ratio = SPLIT_CONFIG$test_ratio, 
+                         val_ratio = SPLIT_CONFIG$val_ratio, verbose = verbose)
+            
+            # 提取資料集
+            datasets <- extract_all_sets(ds, sp)
+            
+            # 訓練模型
+            file_results <- list()
+            
+            # 模型循環
+            if ("lgbm" %in% models) {
+              if(verbose) {
+                cat("\n🌳 訓練 LightGBM 模型...\n")
+              }
+              
+              tryCatch({
+                lgbm_model <- train_lgbm(
+                  train_dataset = datasets$train,
+                  val_dataset = datasets$val,
+                  params = LGBM_PARAMS,
+                  verbose = verbose
+                )
+                
+                # 預測和評估
+                lgbm_pred <- predict_lgbm(lgbm_model, datasets$test, verbose = verbose)
+                lgbm_eval <- evaluate_predictions(datasets$test$y, lgbm_pred)
+                
+                # 儲存模型
+                model_name <- paste0("lgbm_", dtype, "_", chunk_name)
+                model_path <- file.path(OUTPUT_PATHS$models, paste0(model_name, ".rds"))
+                save_lgbm_model(lgbm_model, model_path, save_importance = TRUE)
+                
+                file_results$lgbm <- list(
+                  model = lgbm_model,
+                  predictions = lgbm_pred,
+                  evaluation = lgbm_eval,
+                  model_path = model_path
+                )
+                
+                if(verbose) {
+                  cat("✅ LightGBM 完成 - RMSE:", round(lgbm_eval$rmse, 4), "\n")
+                }
+                
+              }, error = function(e) {
+                if(verbose) {
+                  cat("❌ LightGBM 失敗:", e$message, "\n")
+                }
+                file_results$lgbm <- NULL
+              })
+            }
+            
+            if ("lstm" %in% models) {
+              if(verbose) {
+                cat("\n🧠 訓練 LSTM 模型...\n")
+              }
+              
+              tryCatch({
+                lstm_model <- train_lstm(
+                  train_dataset = datasets$train,
+                  val_dataset = datasets$val,
+                  params = LSTM_PARAMS,
+                  verbose = verbose
+                )
+                
+                # 預測和評估
+                lstm_pred <- predict_lstm(lstm_model, datasets$test, verbose = verbose)
+                lstm_eval <- evaluate_predictions(datasets$test$y, lstm_pred)
+                
+                # 儲存模型
+                model_name <- paste0("lstm_", dtype, "_", chunk_name)
+                model_path <- file.path(OUTPUT_PATHS$models, paste0(model_name, ".pt"))
+                save_lstm_model(lstm_model, model_path)
+                
+                file_results$lstm <- list(
+                  model = lstm_model,
+                  predictions = lstm_pred,
+                  evaluation = lstm_eval,
+                  model_path = model_path
+                )
+                
+                if(verbose) {
+                  cat("✅ LSTM 完成 - RMSE:", round(lstm_eval$rmse, 4), "\n")
+                }
+                
+                # 清理GPU記憶體
+                if(LSTM_PARAMS$device == "cuda") {
+                  clear_gpu_memory()
+                }
+                
+              }, error = function(e) {
+                if(verbose) {
+                  cat("❌ LSTM 失敗:", e$message, "\n")
+                }
+                file_results$lstm <- NULL
+              })
+            }
+            
+            # 儲存chunk結果
+            dtype_results[[chunk_name]] <- list(
+              dataset = ds,
+              split = sp,
+              models = file_results,
+              file_path = chunk_file
+            )
             
           }, error = function(e) {
             if(verbose) {
-              cat("❌ LightGBM 失敗:", e$message, "\n")
+              cat("❌ Chunk處理失敗:", e$message, "\n")
             }
-            file_results$lgbm <- NULL
           })
         }
-        
-        if ("lstm" %in% models) {
-          if(verbose) {
-            cat("\n🧠 訓練 LSTM 模型...\n")
-          }
-          
-          tryCatch({
-            lstm_model <- train_lstm(
-              train_dataset = datasets$train,
-              val_dataset = datasets$val,
-              params = LSTM_PARAMS,
-              verbose = verbose
-            )
-            
-            # 預測和評估
-            lstm_pred <- predict_lstm(lstm_model, datasets$test, verbose = verbose)
-            lstm_eval <- evaluate_predictions(datasets$test$y, lstm_pred)
-            
-            # 儲存模型
-            model_name <- paste0("lstm_", dtype, "_", tools::file_path_sans_ext(basename(fp)))
-            model_path <- file.path(OUTPUT_PATHS$models, paste0(model_name, ".pt"))
-            save_lstm_model(lstm_model, model_path)
-            
-            file_results$lstm <- list(
-              model = lstm_model,
-              predictions = lstm_pred,
-              evaluation = lstm_eval,
-              model_path = model_path
-            )
-            
-            if(verbose) {
-              cat("✅ LSTM 完成 - RMSE:", round(lstm_eval$rmse, 4), "\n")
-            }
-            
-            # 清理GPU記憶體
-            if(LSTM_PARAMS$device == "cuda") {
-              clear_gpu_memory()
-            }
-            
-          }, error = function(e) {
-            if(verbose) {
-              cat("❌ LSTM 失敗:", e$message, "\n")
-            }
-            file_results$lstm <- NULL
-          })
-        }
-        
-        # 儲存檔案結果
-        file_key <- tools::file_path_sans_ext(basename(fp))
-        dtype_results[[file_key]] <- list(
-          dataset = ds,
-          split = sp,
-          models = file_results,
-          file_path = fp
-        )
         
       }, error = function(e) {
         if(verbose) {
-          cat("❌ 檔案處理失敗:", e$message, "\n")
+          cat("❌ 大檔案處理失敗:", e$message, "\n")
         }
+        dtype_results <- list()
       })
+      
+    } else {
+      # 小檔案模式處理
+      if(verbose) {
+        cat("🔍 檢測到小檔案模式:", config$display_name, "\n")
+      }
+      
+      # 找到所有windows檔案
+      files <- list.files(data_folders[[dtype]], pattern = "_windows\\.rds$", full.names = TRUE)
+      
+      if(length(files) == 0) {
+        if(verbose) {
+          cat("⚠️  跳過", dtype, ": 沒有找到windows檔案\n")
+        }
+        all_results[[dtype]] <- NULL
+        next
+      }
+      
+      # 限制檔案數量（如果指定）
+      if(!is.null(max_files) && length(files) > max_files) {
+        files <- files[1:max_files]
+        if(verbose) {
+          cat("📋 限制處理前", max_files, "個檔案\n")
+        }
+      }
+      
+      # 處理每個檔案
+      dtype_results <- list()
+      
+      for (fp in files) {
+        if(verbose) {
+          cat("\n📄 處理檔案:", basename(fp), "\n")
+        }
+        
+        tryCatch({
+          # 載入資料 (使用統一介面)
+          ds <- load_windows(fp, verbose = verbose)
+          
+          # 時序切分
+          sp <- time_cv(ds, test_ratio = SPLIT_CONFIG$test_ratio, 
+                       val_ratio = SPLIT_CONFIG$val_ratio, verbose = verbose)
+          
+          # 提取資料集
+          datasets <- extract_all_sets(ds, sp)
+          
+          # 訓練模型
+          file_results <- list()
+          
+          # 模型循環
+          if ("lgbm" %in% models) {
+            if(verbose) {
+              cat("\n🌳 訓練 LightGBM 模型...\n")
+            }
+            
+            tryCatch({
+              lgbm_model <- train_lgbm(
+                train_dataset = datasets$train,
+                val_dataset = datasets$val,
+                params = LGBM_PARAMS,
+                verbose = verbose
+              )
+              
+              # 預測和評估
+              lgbm_pred <- predict_lgbm(lgbm_model, datasets$test, verbose = verbose)
+              lgbm_eval <- evaluate_predictions(datasets$test$y, lgbm_pred)
+              
+              # 儲存模型
+              model_name <- paste0("lgbm_", dtype, "_", tools::file_path_sans_ext(basename(fp)))
+              model_path <- file.path(OUTPUT_PATHS$models, paste0(model_name, ".rds"))
+              save_lgbm_model(lgbm_model, model_path, save_importance = TRUE)
+              
+              file_results$lgbm <- list(
+                model = lgbm_model,
+                predictions = lgbm_pred,
+                evaluation = lgbm_eval,
+                model_path = model_path
+              )
+              
+              if(verbose) {
+                cat("✅ LightGBM 完成 - RMSE:", round(lgbm_eval$rmse, 4), "\n")
+              }
+              
+            }, error = function(e) {
+              if(verbose) {
+                cat("❌ LightGBM 失敗:", e$message, "\n")
+              }
+              file_results$lgbm <- NULL
+            })
+          }
+          
+          if ("lstm" %in% models) {
+            if(verbose) {
+              cat("\n🧠 訓練 LSTM 模型...\n")
+            }
+            
+            tryCatch({
+              lstm_model <- train_lstm(
+                train_dataset = datasets$train,
+                val_dataset = datasets$val,
+                params = LSTM_PARAMS,
+                verbose = verbose
+              )
+              
+              # 預測和評估
+              lstm_pred <- predict_lstm(lstm_model, datasets$test, verbose = verbose)
+              lstm_eval <- evaluate_predictions(datasets$test$y, lstm_pred)
+              
+              # 儲存模型
+              model_name <- paste0("lstm_", dtype, "_", tools::file_path_sans_ext(basename(fp)))
+              model_path <- file.path(OUTPUT_PATHS$models, paste0(model_name, ".pt"))
+              save_lstm_model(lstm_model, model_path)
+              
+              file_results$lstm <- list(
+                model = lstm_model,
+                predictions = lstm_pred,
+                evaluation = lstm_eval,
+                model_path = model_path
+              )
+              
+              if(verbose) {
+                cat("✅ LSTM 完成 - RMSE:", round(lstm_eval$rmse, 4), "\n")
+              }
+              
+              # 清理GPU記憶體
+              if(LSTM_PARAMS$device == "cuda") {
+                clear_gpu_memory()
+              }
+              
+            }, error = function(e) {
+              if(verbose) {
+                cat("❌ LSTM 失敗:", e$message, "\n")
+              }
+              file_results$lstm <- NULL
+            })
+          }
+          
+          # 儲存檔案結果
+          file_key <- tools::file_path_sans_ext(basename(fp))
+          dtype_results[[file_key]] <- list(
+            dataset = ds,
+            split = sp,
+            models = file_results,
+            file_path = fp
+          )
+          
+        }, error = function(e) {
+          if(verbose) {
+            cat("❌ 檔案處理失敗:", e$message, "\n")
+          }
+        })
+      }
     }
     
     # 儲存資料類型結果
