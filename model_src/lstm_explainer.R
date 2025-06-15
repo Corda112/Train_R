@@ -128,7 +128,7 @@ create_lstm_variable_plot <- function(var_importance, model_id, top_n = 20) {
   plot_data <- head(var_importance, top_n)
   
   p <- ggplot(plot_data, aes(x = reorder(feature_name, importance), y = importance)) +
-    geom_col(fill = "darkgreen", alpha = 0.7) +
+    geom_col(fill = "darkgreen", alpha = 0.7, color = "white", linewidth = 0.1) +
     coord_flip() +
     labs(
       title = paste("LSTM 特徵重要度分析 -", model_id),
@@ -136,10 +136,19 @@ create_lstm_variable_plot <- function(var_importance, model_id, top_n = 20) {
       y = "梯度重要度",
       caption = paste("基於梯度分析的前", top_n, "個重要特徵")
     ) +
-    theme_minimal() +
+    theme_classic() +
     theme(
-      plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
-      axis.text.y = element_text(size = 9)
+      plot.background = element_rect(fill = "white", color = NA),
+      panel.background = element_rect(fill = "white", color = NA),
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold", color = "black"),
+      axis.text.y = element_text(size = 9, color = "black"),
+      axis.text.x = element_text(size = 10, color = "black"),
+      axis.title = element_text(size = 12, color = "black"),
+      axis.line = element_line(color = "black", linewidth = 0.5),
+      axis.ticks = element_line(color = "black", linewidth = 0.3),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.caption = element_text(size = 8, color = "gray50")
     )
   
   return(p)
@@ -151,7 +160,7 @@ create_lstm_variable_plot <- function(var_importance, model_id, top_n = 20) {
 #' @return ggplot物件
 create_lstm_timestep_plot <- function(time_importance, model_id) {
   p <- ggplot(time_importance, aes(x = hour_before, y = importance)) +
-    geom_line(color = "darkgreen", size = 1) +
+    geom_line(color = "darkgreen", linewidth = 1) +
     geom_point(color = "forestgreen", size = 0.8) +
     labs(
       title = paste("LSTM 時間步貢獻分析 -", model_id),
@@ -159,9 +168,18 @@ create_lstm_timestep_plot <- function(time_importance, model_id) {
       y = "梯度重要度", 
       caption = "顯示過去72小時各時間點對預測的影響程度"
     ) +
-    theme_minimal() +
+    theme_classic() +
     theme(
-      plot.title = element_text(hjust = 0.5, size = 14, face = "bold")
+      plot.background = element_rect(fill = "white", color = NA),
+      panel.background = element_rect(fill = "white", color = NA),
+      plot.title = element_text(hjust = 0.5, size = 14, face = "bold", color = "black"),
+      axis.text = element_text(size = 10, color = "black"),
+      axis.title = element_text(size = 12, color = "black"),
+      axis.line = element_line(color = "black", linewidth = 0.5),
+      axis.ticks = element_line(color = "black", linewidth = 0.3),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.caption = element_text(size = 8, color = "gray50")
     ) +
     scale_x_continuous(breaks = seq(0, 72, 12)) +
     geom_vline(xintercept = c(1, 6, 12, 24), linetype = "dashed", alpha = 0.5, color = "gray")
@@ -198,7 +216,7 @@ create_sample_saliency_map <- function(grad_sample, model_id, sample_idx = 1, to
   
   # 創建熱圖
   p <- ggplot(plot_data, aes(x = hour_before, y = feature, fill = saliency)) +
-    geom_tile() +
+    geom_tile(color = "white", linewidth = 0.1) +
     scale_fill_gradient2(
       low = "blue", mid = "white", high = "red",
       midpoint = 0, name = "梯度值"
@@ -210,11 +228,20 @@ create_sample_saliency_map <- function(grad_sample, model_id, sample_idx = 1, to
       y = "特徵",
       caption = "顏色深度表示該特徵在該時間點對預測的貢獻"
     ) +
-    theme_minimal() +
+    theme_classic() +
     theme(
-      plot.title = element_text(hjust = 0.5, size = 12, face = "bold"),
-      plot.subtitle = element_text(hjust = 0.5, size = 10),
-      axis.text.y = element_text(size = 8),
+      plot.background = element_rect(fill = "white", color = NA),
+      panel.background = element_rect(fill = "white", color = NA),
+      plot.title = element_text(hjust = 0.5, size = 12, face = "bold", color = "black"),
+      plot.subtitle = element_text(hjust = 0.5, size = 10, color = "black"),
+      axis.text.y = element_text(size = 8, color = "black"),
+      axis.text.x = element_text(size = 10, color = "black"),
+      axis.title = element_text(size = 12, color = "black"),
+      axis.line = element_line(color = "black", linewidth = 0.5),
+      axis.ticks = element_line(color = "black", linewidth = 0.3),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      plot.caption = element_text(size = 8, color = "gray50"),
       legend.position = "right"
     ) +
     scale_x_continuous(breaks = seq(0, 72, 12))

@@ -395,4 +395,203 @@ run_simple_explanation_pipeline <- function(models_dir = "model_outputs/models/"
   ))
 }
 
+#' 基礎版本的 scan_models_minimal (兼容性函數)
+#' @param models_dir 模型目錄路徑
+#' @param filter_type 過濾類型
+#' @param max_models 最大模型數
+#' @param verbose 詳細輸出
+#' @return 模型資訊表
+scan_models_minimal <- function(models_dir = "model_outputs/models/", 
+                               filter_type = NULL, 
+                               max_models = NULL, 
+                               verbose = FALSE) {
+  
+  if(verbose) {
+    cat("📂 掃描模型目錄:", models_dir, "\n")
+  }
+  
+  # 檢查是否為重組後的目錄結構
+  if(grepl("models_organized", models_dir) && dir.exists(models_dir)) {
+    # 使用簡化版的重組目錄掃描
+    models <- scan_organized_models_basic(models_dir, filter_type, max_models, verbose)
+  } else {
+    # 使用原始目錄掃描
+    models <- scan_model_outputs(models_dir)
+    
+    # 應用過濾器
+    if(!is.null(filter_type)) {
+      models <- models[model_type == filter_type]
+    }
+    
+    # 應用最大模型數限制
+    if(!is.null(max_models) && max_models > 0 && nrow(models) > max_models) {
+      models <- models[1:max_models]
+    }
+  }
+  
+  return(models)
+}
+
+#' 基礎版本的重組目錄掃描
+#' @param models_dir 模型目錄
+#' @param filter_type 過濾類型
+#' @param max_models 最大模型數
+#' @param verbose 詳細輸出
+#' @return 模型資訊表
+scan_organized_models_basic <- function(models_dir, filter_type = NULL, max_models = NULL, verbose = FALSE) {
+  
+  if(verbose) {
+    cat("📂 掃描重組後的模型目錄:", models_dir, "\n")
+  }
+  
+  if(!dir.exists(models_dir)) {
+    cat("❌ 目錄不存在:", models_dir, "\n")
+    return(data.table())
+  }
+  
+  models_info <- data.table()
+  
+  # 遞歸掃描所有模型目錄
+  model_dirs <- list.dirs(models_dir, recursive = TRUE, full.names = TRUE)
+  model_dirs <- model_dirs[model_dirs != models_dir]  # 排除根目錄
+  
+  for(model_dir in model_dirs) {
+    
+    # 檢查是否包含model.rds
+    model_file <- file.path(model_dir, "model.rds")
+    
+    if(file.exists(model_file)) {
+      
+      # 從路徑提取模型資訊
+      rel_path <- gsub(paste0("^", models_dir, "/?"), "", model_dir)
+      rel_path <- gsub("\\\\", "/", rel_path)  # 標準化路徑分隔符
+      path_parts <- strsplit(rel_path, "/")[[1]]
+      
+      if(length(path_parts) >= 3) {
+        model_type <- path_parts[1]
+        dataset_type <- path_parts[2]
+        detail_name <- path_parts[3]  # 使用detail_name保持兼容性
+        
+        model_id <- paste(model_type, dataset_type, detail_name, sep = "_")
+        
+        # 檢查相關檔案
+        importance_file <- file.path(model_dir, "importance.csv")
+        original_importance_file <- file.path(model_dir, "original_importance.csv")
+        
+        # 構建path_prefix (兼容性)
+        path_prefix <- file.path(model_dir, gsub("\\.rds$", "", basename(model_file)))
+        
+        models_info <- rbindlist(list(models_info, data.table(
+          id = model_id,
+          model_type = model_type,
+          dataset_type = dataset_type,
+          detail_name = detail_name,
+          path_prefix = path_prefix,
+          complete_file = model_file,  # 重組後的model.rds就是完整檔案
+          model_file = model_file,     # 添加model_file欄位
+          importance_file = if(file.exists(importance_file)) importance_file else NA,
+          original_importance_file = if(file.exists(original_importance_file)) original_importance_file else NA,
+          exists_importance = file.exists(importance_file),
+          exists_original_importance = file.exists(original_importance_file),
+          has_importance = file.exists(importance_file),
+          has_original_importance = file.exists(original_importance_file)
+        )))
+      }
+    }
+  }
+  
+  # 應用過濾器
+  if(!is.null(filter_type)) {
+    if(tolower(filter_type) %in% c("lgbm", "lightgbm")) {
+      models_info <- models_info[model_type == "lgbm"]
+    } else if(tolower(filter_type) == "lstm") {
+      models_info <- models_info[model_type == "lstm"]
+    }
+  }
+  
+  # 應用最大模型數限制
+  if(!is.null(max_models) && max_models > 0 && nrow(models_info) > max_models) {
+    models_info <- models_info[1:max_models]
+  }
+  
+  if(verbose) {
+    cat("✅ 掃描完成:", nrow(models_info), "個模型\n")
+    if(nrow(models_info) > 0) {
+      cat("  LightGBM:", sum(models_info$model_type == "lgbm"), "個\n")
+      cat("  LSTM:", sum(models_info$model_type == "lstm"), "個\n")
+    }
+  }
+  
+  return(models_info)
+}
+
+#' 基礎版本的 analyze_feature_importance_batch (兼容性函數)
+#' @param models_info 模型資訊表
+#' @param output_dir 輸出目錄
+#' @param max_models 最大模型數
+#' @return 分析結果
+analyze_feature_importance_batch <- function(models_info, 
+                                           output_dir = "analysis_outputs/", 
+                                           max_models = NULL) {
+  
+  cat("📈 開始批次特徵重要度分析...\n")
+  cat("⚠️ 使用基礎版本分析（功能有限）\n")
+  
+  # 檢查 max_models 參數
+  if(!is.null(max_models) && max_models > 0 && nrow(models_info) > max_models) {
+    models_info <- models_info[1:max_models]
+  }
+  
+  lgbm_models <- models_info[model_type == "lgbm"]
+  lstm_models <- models_info[model_type == "lstm"]
+  
+  cat("📊 發現", nrow(lgbm_models), "個LightGBM模型,", nrow(lstm_models), "個LSTM模型\n")
+  
+  results <- list()
+  
+  # 基礎LightGBM分析
+  if(nrow(lgbm_models) > 0) {
+    cat("🌳 分析LightGBM模型...\n")
+    for(i in 1:nrow(lgbm_models)) {
+      model_info <- lgbm_models[i]
+      tryCatch({
+        # 基礎分析：只檢查檔案存在性
+        result <- list(
+          model_id = model_info$id,
+          status = "basic_check",
+          has_importance = model_info$exists_importance,
+          has_original_importance = model_info$exists_original_importance
+        )
+        results[[model_info$id]] <- result
+        cat("  ✅", model_info$id, "\n")
+      }, error = function(e) {
+        cat("  ❌", model_info$id, "- 錯誤:", e$message, "\n")
+      })
+    }
+  }
+  
+  # 基礎LSTM分析
+  if(nrow(lstm_models) > 0) {
+    cat("🧠 分析LSTM模型...\n")
+    for(i in 1:nrow(lstm_models)) {
+      model_info <- lstm_models[i]
+      tryCatch({
+        result <- list(
+          model_id = model_info$id,
+          status = "basic_check",
+          has_model = file.exists(model_info$complete_file)
+        )
+        results[[model_info$id]] <- result
+        cat("  ✅", model_info$id, "\n")
+      }, error = function(e) {
+        cat("  ❌", model_info$id, "- 錯誤:", e$message, "\n")
+      })
+    }
+  }
+  
+  cat("📊 批次分析完成: 成功", length(results), "/", nrow(models_info), "個模型\n")
+  
+  return(results)
+}
+
 cat("✅ 簡化版模型解析與可解釋性分析模組載入完成\n") 
