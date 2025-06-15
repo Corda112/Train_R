@@ -1,0 +1,610 @@
+# ================================================================================
+# AQI 時間序列預測模型訓練 - 主要管線腳本
+# ================================================================================
+
+cat("🚀 載入 AQI 模型訓練管線...\n")
+
+# ================================================================================
+# 1. 載入所有模組
+# ================================================================================
+
+# 載入配置
+source("model_src/config.R")
+
+# 載入核心模組
+source("model_src/loader.R")
+source("model_src/split.R")
+source("model_src/evaluate.R")
+source("model_src/model_lgbm.R")
+source("model_src/model_lstm.R")
+
+cat("✅ 所有模組載入完成\n")
+
+# ================================================================================
+# 2. 主要訓練函數
+# ================================================================================
+
+#' 訓練單一資料類型的模型
+#' @param data_type 資料類型 ("separate", "separate_norm", "combine", "combine_norm")
+#' @param models 要訓練的模型列表 (c("lgbm", "lstm"))
+#' @param max_files 最大載入檔案數 (僅對小檔案有效)
+#' @param verbose 是否顯示詳細資訊
+#' @return 訓練結果列表
+train_single_data_type <- function(data_type, models = c("lgbm", "lstm"), 
+                                  max_files = NULL, verbose = TRUE) {
+  
+  if(verbose) {
+    cat("\n", paste(rep("=", 80), collapse = ""), "\n")
+    cat("🎯 開始訓練資料類型:", toupper(data_type), "\n")
+    cat(paste(rep("=", 80), collapse = ""), "\n")
+  }
+  
+  start_time <- Sys.time()
+  
+  # 驗證資料類型
+  if(!data_type %in% names(DATA_TYPES)) {
+    stop("不支援的資料類型: ", data_type)
+  }
+  
+  config <- DATA_TYPES[[data_type]]
+  
+  # 創建輸出目錄
+  output_dir <- file.path(OUTPUT_PATHS$models, data_type)
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  
+  log_dir <- file.path(OUTPUT_PATHS$logs, data_type)
+  dir.create(log_dir, recursive = TRUE, showWarnings = FALSE)
+  
+  metrics_dir <- file.path(OUTPUT_PATHS$metrics, data_type)
+  dir.create(metrics_dir, recursive = TRUE, showWarnings = FALSE)
+  
+  # 載入資料
+  if(verbose) {
+    cat("📥 載入資料...\n")
+  }
+  
+  tryCatch({
+    if(config$is_large) {
+      # 大檔案模式 - 載入第一個區塊進行訓練
+      data_loader <- load_data_auto(config$path, data_type = data_type, verbose = verbose)
+      
+      if(verbose) {
+        cat("⚠️  大檔案模式：僅使用第一個區塊進行訓練\n")
+      }
+      
+      # 獲取第一個區塊
+      first_chunk <- data_loader()
+      if(is.null(first_chunk)) {
+        stop("無法載入第一個資料區塊")
+      }
+      
+      dataset <- first_chunk
+      
+    } else {
+      # 小檔案模式 - 載入並合併所有檔案
+      datasets_list <- load_data_auto(config$path, data_type = data_type, 
+                                     max_files = max_files, verbose = verbose)
+      
+      if(length(datasets_list) == 0) {
+        stop("沒有載入到任何資料")
+      }
+      
+      # 合併資料集
+      if(length(datasets_list) > 1) {
+        if(verbose) {
+          cat("🔗 合併", length(datasets_list), "個資料集...\n")
+        }
+        dataset <- combine_datasets(datasets_list, verbose = verbose)
+      } else {
+        dataset <- datasets_list[[1]]
+      }
+    }
+    
+    # 驗證資料集
+    validation_result <- validate_dataset(dataset)
+    if(!validation_result$is_valid) {
+      warning("資料集驗證失敗: ", paste(validation_result$issues, collapse = "; "))
+    }
+    
+    if(verbose) {
+      print(dataset)
+    }
+    
+  }, error = function(e) {
+    cat("❌ 資料載入失敗:", e$message, "\n")
+    return(NULL)
+  })
+  
+  # 資料切分
+  if(verbose) {
+    cat("\n✂️  執行資料切分...\n")
+  }
+  
+  split_result <- time_split(
+    dataset = dataset,
+    train_ratio = SPLIT_CONFIG$train_ratio,
+    val_ratio = SPLIT_CONFIG$val_ratio,
+    test_ratio = SPLIT_CONFIG$test_ratio,
+    method = "sequential",
+    verbose = verbose
+  )
+  
+  # 提取資料集
+  datasets <- extract_all_sets(dataset, split_result)
+  
+  # 評估切分品質
+  split_quality <- evaluate_split_quality(dataset, split_result)
+  if(verbose) {
+    cat("切分品質評分:", round(split_quality$quality_score, 3), "\n")
+  }
+  
+  # 儲存切分結果
+  split_path <- file.path(log_dir, "data_split.rds")
+  saveRDS(list(split = split_result, quality = split_quality), split_path)
+  
+  # 訓練模型
+  trained_models <- list()
+  predictions <- list()
+  evaluations <- list()
+  
+  for(model_type in models) {
+    if(verbose) {
+      cat("\n🤖 訓練", toupper(model_type), "模型...\n")
+             cat(paste(rep("-", 50), collapse = ""), "\n")
+    }
+    
+    model_start_time <- Sys.time()
+    
+    tryCatch({
+      if(model_type == "lgbm") {
+        # 訓練LightGBM模型
+        model <- train_lgbm(
+          train_dataset = datasets$train,
+          val_dataset = datasets$val,
+          params = LGBM_PARAMS,
+          verbose = verbose
+        )
+        
+        # 預測
+        test_predictions <- predict_lgbm(model, datasets$test, verbose = verbose)
+        
+        # 儲存模型
+        model_path <- file.path(output_dir, paste0("lgbm_", data_type))
+        save_lgbm_model(model, model_path, save_importance = TRUE)
+        
+      } else if(model_type == "lstm") {
+        # 訓練LSTM模型
+        model <- train_lstm(
+          train_dataset = datasets$train,
+          val_dataset = datasets$val,
+          params = LSTM_PARAMS,
+          verbose = verbose
+        )
+        
+        # 預測
+        test_predictions <- predict_lstm(model, datasets$test, verbose = verbose)
+        
+        # 儲存模型
+        model_path <- file.path(output_dir, paste0("lstm_", data_type))
+        save_lstm_model(model, model_path)
+        
+        # 清理GPU記憶體
+        if(LSTM_PARAMS$device == "cuda") {
+          clear_gpu_memory()
+        }
+        
+      } else {
+        stop("不支援的模型類型: ", model_type)
+      }
+      
+      # 評估模型
+      evaluation <- evaluate_predictions(datasets$test$y, test_predictions)
+      
+      if(verbose) {
+        cat("\n📊 模型評估結果:\n")
+        print(evaluation)
+      }
+      
+      # 儲存評估結果
+      eval_path <- file.path(metrics_dir, paste0(model_type, "_evaluation.rds"))
+      save_evaluation(evaluation, eval_path)
+      
+      # 記錄結果
+      trained_models[[model_type]] <- model
+      predictions[[model_type]] <- test_predictions
+      evaluations[[model_type]] <- evaluation
+      
+      model_end_time <- Sys.time()
+      model_training_time <- as.numeric(difftime(model_end_time, model_start_time, units = "mins"))
+      
+      if(verbose) {
+        cat("✅", toupper(model_type), "模型訓練完成，耗時:", round(model_training_time, 2), "分鐘\n")
+      }
+      
+    }, error = function(e) {
+      cat("❌", toupper(model_type), "模型訓練失敗:", e$message, "\n")
+      trained_models[[model_type]] <- NULL
+      predictions[[model_type]] <- NULL
+      evaluations[[model_type]] <- NULL
+    })
+  }
+  
+  # 模型比較
+  if(length(evaluations) > 1) {
+    if(verbose) {
+      cat("\n🏆 模型比較...\n")
+    }
+    
+    comparison <- compare_models(evaluations, names(evaluations))
+    
+    if(verbose) {
+      print(comparison)
+    }
+    
+    # 儲存比較結果
+    comparison_path <- file.path(metrics_dir, "model_comparison.csv")
+    write.csv(comparison, comparison_path, row.names = FALSE)
+  }
+  
+  end_time <- Sys.time()
+  total_time <- as.numeric(difftime(end_time, start_time, units = "mins"))
+  
+  if(verbose) {
+    cat("\n✅ 資料類型", toupper(data_type), "訓練完成\n")
+    cat("總耗時:", round(total_time, 2), "分鐘\n")
+    cat("成功訓練模型:", length(trained_models), "/", length(models), "\n")
+  }
+  
+  # 返回結果
+  result <- list(
+    data_type = data_type,
+    dataset = dataset,
+    split = split_result,
+    datasets = datasets,
+    models = trained_models,
+    predictions = predictions,
+    evaluations = evaluations,
+    comparison = if(length(evaluations) > 1) comparison else NULL,
+    total_time = total_time,
+    completed_at = end_time
+  )
+  
+  class(result) <- c("aqi_training_result", "list")
+  
+  return(result)
+}
+
+#' 打印訓練結果摘要
+#' @param x aqi_training_result 物件
+print.aqi_training_result <- function(x, ...) {
+  cat("AQI 模型訓練結果\n")
+  cat("================\n")
+  cat("資料類型:", toupper(x$data_type), "\n")
+  cat("總耗時:", round(x$total_time, 2), "分鐘\n")
+  cat("完成時間:", format(x$completed_at, "%Y-%m-%d %H:%M:%S"), "\n")
+  
+  cat("\n📊 資料統計:\n")
+  cat("  總窗口數:", format(x$dataset$n_windows, big.mark = ","), "\n")
+  cat("  特徵數量:", x$dataset$n_features, "\n")
+  cat("  序列長度:", x$dataset$seq_len, "\n")
+  
+  cat("\n🤖 訓練模型:\n")
+  for(model_name in names(x$models)) {
+    if(!is.null(x$models[[model_name]])) {
+      eval_result <- x$evaluations[[model_name]]
+      cat("  ", toupper(model_name), "- RMSE:", round(eval_result$rmse, 4), 
+          ", R²:", round(eval_result$r2, 4), "\n")
+    }
+  }
+  
+  if(!is.null(x$comparison)) {
+    best_model <- x$comparison$Model[which.min(x$comparison$Overall_Rank)]
+    cat("\n🏆 最佳模型:", best_model, "\n")
+  }
+}
+
+# ================================================================================
+# 3. 批次訓練函數
+# ================================================================================
+
+#' 批次訓練所有資料類型
+#' @param data_types 要訓練的資料類型列表
+#' @param models 要訓練的模型列表
+#' @param max_files 最大載入檔案數 (僅對小檔案有效)
+#' @param verbose 是否顯示詳細資訊
+#' @return 批次訓練結果列表
+train_all_data_types <- function(data_types = names(DATA_TYPES), 
+                                models = c("lgbm", "lstm"),
+                                max_files = NULL,
+                                verbose = TRUE) {
+  
+  if(verbose) {
+    cat("🚀 開始批次訓練\n")
+    cat(paste(rep("=", 80), collapse = ""), "\n")
+    cat("資料類型:", paste(toupper(data_types), collapse = ", "), "\n")
+    cat("模型類型:", paste(toupper(models), collapse = ", "), "\n")
+    cat("開始時間:", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "\n")
+    cat(paste(rep("=", 80), collapse = ""), "\n")
+  }
+  
+  batch_start_time <- Sys.time()
+  
+  # 批次訓練結果
+  batch_results <- list()
+  success_count <- 0
+  total_count <- length(data_types)
+  
+  for(i in seq_along(data_types)) {
+    data_type <- data_types[i]
+    
+    if(verbose) {
+      cat("\n📋 進度: [", i, "/", total_count, "] 處理資料類型:", toupper(data_type), "\n")
+    }
+    
+    tryCatch({
+      result <- train_single_data_type(
+        data_type = data_type,
+        models = models,
+        max_files = max_files,
+        verbose = verbose
+      )
+      
+      if(!is.null(result)) {
+        batch_results[[data_type]] <- result
+        success_count <- success_count + 1
+        
+        if(verbose) {
+          cat("✅ 資料類型", toupper(data_type), "處理成功\n")
+        }
+      }
+      
+    }, error = function(e) {
+      cat("❌ 資料類型", toupper(data_type), "處理失敗:", e$message, "\n")
+      batch_results[[data_type]] <- NULL
+    })
+    
+    # 記憶體清理
+    gc()
+    if(any(models == "lstm") && LSTM_PARAMS$device == "cuda") {
+      clear_gpu_memory()
+    }
+  }
+  
+  batch_end_time <- Sys.time()
+  batch_total_time <- as.numeric(difftime(batch_end_time, batch_start_time, units = "hours"))
+  
+  if(verbose) {
+    cat("\n", paste(rep("=", 80), collapse = ""), "\n")
+    cat("🎉 批次訓練完成\n")
+    cat(paste(rep("=", 80), collapse = ""), "\n")
+    cat("成功處理:", success_count, "/", total_count, "個資料類型\n")
+    cat("總耗時:", round(batch_total_time, 2), "小時\n")
+    cat("完成時間:", format(batch_end_time, "%Y-%m-%d %H:%M:%S"), "\n")
+  }
+  
+  # 生成批次摘要
+  batch_summary <- generate_batch_summary(batch_results, models)
+  
+  # 儲存批次結果
+  batch_output_path <- file.path(OUTPUT_PATHS$logs, "batch_training_results.rds")
+  saveRDS(list(
+    results = batch_results,
+    summary = batch_summary,
+    success_count = success_count,
+    total_count = total_count,
+    total_time = batch_total_time,
+    completed_at = batch_end_time
+  ), batch_output_path)
+  
+  if(verbose) {
+    cat("📄 批次結果已儲存:", batch_output_path, "\n")
+    print(batch_summary)
+  }
+  
+  return(list(
+    results = batch_results,
+    summary = batch_summary,
+    success_count = success_count,
+    total_count = total_count,
+    total_time = batch_total_time
+  ))
+}
+
+# ================================================================================
+# 4. 結果分析函數
+# ================================================================================
+
+#' 生成批次訓練摘要
+#' @param batch_results 批次訓練結果
+#' @param models 模型列表
+#' @return 摘要資料框
+generate_batch_summary <- function(batch_results, models) {
+  summary_data <- data.frame(
+    Data_Type = character(),
+    Status = character(),
+    N_Windows = integer(),
+    N_Features = integer(),
+    Training_Time_Min = numeric(),
+    stringsAsFactors = FALSE
+  )
+  
+  # 為每個模型添加評估指標欄位
+  for(model in models) {
+    summary_data[[paste0(toupper(model), "_RMSE")]] <- numeric()
+    summary_data[[paste0(toupper(model), "_MAE")]] <- numeric()
+    summary_data[[paste0(toupper(model), "_R2")]] <- numeric()
+  }
+  
+  for(data_type in names(batch_results)) {
+    result <- batch_results[[data_type]]
+    
+    if(is.null(result)) {
+      # 失敗的情況
+      row <- data.frame(
+        Data_Type = toupper(data_type),
+        Status = "Failed",
+        N_Windows = NA,
+        N_Features = NA,
+        Training_Time_Min = NA,
+        stringsAsFactors = FALSE
+      )
+      
+      # 為模型指標填充NA
+      for(model in models) {
+        row[[paste0(toupper(model), "_RMSE")]] <- NA
+        row[[paste0(toupper(model), "_MAE")]] <- NA
+        row[[paste0(toupper(model), "_R2")]] <- NA
+      }
+      
+    } else {
+      # 成功的情況
+      row <- data.frame(
+        Data_Type = toupper(data_type),
+        Status = "Success",
+        N_Windows = result$dataset$n_windows,
+        N_Features = result$dataset$n_features,
+        Training_Time_Min = round(result$total_time, 2),
+        stringsAsFactors = FALSE
+      )
+      
+      # 填充模型評估指標
+      for(model in models) {
+        if(model %in% names(result$evaluations) && !is.null(result$evaluations[[model]])) {
+          eval_result <- result$evaluations[[model]]
+          row[[paste0(toupper(model), "_RMSE")]] <- round(eval_result$rmse, 4)
+          row[[paste0(toupper(model), "_MAE")]] <- round(eval_result$mae, 4)
+          row[[paste0(toupper(model), "_R2")]] <- round(eval_result$r2, 4)
+        } else {
+          row[[paste0(toupper(model), "_RMSE")]] <- NA
+          row[[paste0(toupper(model), "_MAE")]] <- NA
+          row[[paste0(toupper(model), "_R2")]] <- NA
+        }
+      }
+    }
+    
+    summary_data <- rbind(summary_data, row)
+  }
+  
+  class(summary_data) <- c("aqi_batch_summary", "data.frame")
+  return(summary_data)
+}
+
+#' 打印批次摘要
+#' @param x aqi_batch_summary 物件
+print.aqi_batch_summary <- function(x, ...) {
+  cat("AQI 批次訓練摘要\n")
+  cat("================\n")
+  
+  # 基本統計
+  success_count <- sum(x$Status == "Success")
+  total_count <- nrow(x)
+  
+  cat("成功率:", success_count, "/", total_count, 
+      "(", round(success_count/total_count*100, 1), "%)\n")
+  
+  if(success_count > 0) {
+    successful_data <- x[x$Status == "Success", ]
+    
+    cat("總窗口數:", format(sum(successful_data$N_Windows, na.rm = TRUE), big.mark = ","), "\n")
+    cat("總訓練時間:", round(sum(successful_data$Training_Time_Min, na.rm = TRUE), 1), "分鐘\n")
+    
+    # 顯示主要結果
+    cat("\n📊 詳細結果:\n")
+    print(x)
+    
+    # 模型性能比較
+    model_cols <- grep("_RMSE$", names(x), value = TRUE)
+    if(length(model_cols) > 0) {
+      cat("\n🏆 模型性能比較 (RMSE):\n")
+      for(col in model_cols) {
+        model_name <- gsub("_RMSE$", "", col)
+        rmse_values <- x[[col]][!is.na(x[[col]])]
+        if(length(rmse_values) > 0) {
+          cat("  ", model_name, "- 平均:", round(mean(rmse_values), 4), 
+              ", 範圍: [", round(min(rmse_values), 4), ", ", round(max(rmse_values), 4), "]\n")
+        }
+      }
+    }
+  }
+}
+
+# ================================================================================
+# 5. 便利函數
+# ================================================================================
+
+#' 快速訓練單一模型
+#' @param data_type 資料類型
+#' @param model_type 模型類型
+#' @param max_files 最大檔案數
+#' @return 訓練結果
+quick_train <- function(data_type, model_type, max_files = 5) {
+  cat("🚀 快速訓練:", toupper(model_type), "模型，資料類型:", toupper(data_type), "\n")
+  
+  result <- train_single_data_type(
+    data_type = data_type,
+    models = model_type,
+    max_files = max_files,
+    verbose = TRUE
+  )
+  
+  return(result)
+}
+
+#' 檢查訓練環境
+check_training_environment <- function() {
+  cat("🔍 檢查訓練環境\n")
+     cat(paste(rep("=", 50), collapse = ""), "\n")
+  
+  # 檢查R版本
+  cat("R版本:", R.version.string, "\n")
+  
+  # 檢查必要套件
+  required_packages <- c("lightgbm", "torch", "Matrix", "data.table")
+  
+  for(pkg in required_packages) {
+    if(requireNamespace(pkg, quietly = TRUE)) {
+      cat("✅", pkg, "已安裝\n")
+    } else {
+      cat("❌", pkg, "未安裝\n")
+    }
+  }
+  
+  # 檢查CUDA
+  if(requireNamespace("torch", quietly = TRUE)) {
+    if(torch::cuda_is_available()) {
+      cat("✅ CUDA可用\n")
+      cat("  GPU數量:", torch::cuda_device_count(), "\n")
+      check_gpu_memory()
+    } else {
+      cat("⚠️  CUDA不可用，將使用CPU\n")
+    }
+  }
+  
+  # 檢查資料路徑
+  cat("\n📁 資料路徑檢查:\n")
+  for(data_type in names(DATA_TYPES)) {
+    path <- DATA_TYPES[[data_type]]$path
+    if(dir.exists(path)) {
+      file_count <- length(list.files(path, pattern = "\\.rds$"))
+      cat("✅", toupper(data_type), ":", file_count, "個檔案\n")
+    } else {
+      cat("❌", toupper(data_type), ": 路徑不存在\n")
+    }
+  }
+  
+  # 檢查輸出目錄
+  cat("\n📂 輸出目錄檢查:\n")
+  for(path_name in names(OUTPUT_PATHS)) {
+    path <- OUTPUT_PATHS[[path_name]]
+    if(dir.exists(path)) {
+      cat("✅", path_name, ": 存在\n")
+    } else {
+      cat("⚠️ ", path_name, ": 不存在，將自動創建\n")
+      dir.create(path, recursive = TRUE, showWarnings = FALSE)
+    }
+  }
+  
+  cat("\n✅ 環境檢查完成\n")
+}
+
+cat("✅ 訓練管線載入完成\n") 
