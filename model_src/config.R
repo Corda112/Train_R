@@ -235,54 +235,326 @@ LOG_CONFIG <- list(
 set_random_seeds <- function() {
   set.seed(RANDOM_SEEDS$global)
   if(requireNamespace("torch", quietly = TRUE)) {
-    torch::torch_manual_seed(RANDOM_SEEDS$torch)
-    if(torch::cuda_is_available()) {
-      torch::cuda_manual_seed_all(RANDOM_SEEDS$torch)
-    }
+    tryCatch({
+      torch::torch_manual_seed(RANDOM_SEEDS$torch)
+      if(torch::cuda_is_available()) {
+        torch::cuda_manual_seed_all(RANDOM_SEEDS$torch)
+      }
+    }, error = function(e) {
+      # torch未完全安裝，跳過torch種子設定
+    })
   }
 }
 
 # 檢查GPU可用性
 check_gpu_availability <- function() {
   if(!requireNamespace("torch", quietly = TRUE)) {
+    cat("⚠️  torch套件未安裝，GPU功能不可用\n")
     return(FALSE)
   }
   
-  gpu_available <- torch::cuda_is_available()
-  if(gpu_available) {
-    gpu_count <- torch::cuda_device_count()
-    gpu_memory <- torch::cuda_memory_allocated(0) / 1024^3  # GB
-    cat("🔥 GPU可用:", gpu_count, "張卡\n")
-    cat("💾 GPU記憶體使用:", round(gpu_memory, 2), "GB\n")
-  } else {
-    cat("⚠️  GPU不可用，將使用CPU\n")
-  }
-  
-  return(gpu_available)
+  # 檢查torch是否正確安裝
+  tryCatch({
+    # 先嘗試載入torch
+    library(torch)
+    
+    # 檢查基本功能
+    test_tensor <- torch_tensor(c(1, 2, 3))
+    
+    # 檢查CUDA
+    gpu_available <- cuda_is_available()
+    if(gpu_available) {
+      gpu_count <- cuda_device_count()
+      cat("🔥 GPU可用:", gpu_count, "張卡\n")
+      # 安全地檢查GPU記憶體
+      tryCatch({
+        gpu_memory <- cuda_memory_allocated(0) / 1024^3  # GB
+        cat("💾 GPU記憶體使用:", round(gpu_memory, 2), "GB\n")
+      }, error = function(e) {
+        cat("💾 GPU記憶體狀態檢查跳過\n")
+      })
+    } else {
+      cat("⚠️  GPU不可用，將使用CPU\n")
+    }
+    return(gpu_available)
+  }, error = function(e) {
+    cat("⚠️  torch未完全安裝，GPU功能不可用\n")
+    cat("💡 錯誤詳情:", e$message, "\n")
+    cat("💡 建議: 使用 CPU 模式進行訓練\n")
+    return(FALSE)
+  })
 }
 
 # 檢查必要套件
-check_required_packages <- function() {
+check_required_packages <- function(auto_install = FALSE) {
   required_packages <- c(
-    "data.table", "lightgbm", "torch", "caret", 
-    "Matrix", "abind", "future.apply", "logger"
+    "data.table", "lightgbm", "Matrix", "abind", "caret"
+  )
+  
+  # 可選套件（缺少時會警告但不會停止）
+  optional_packages <- c(
+    "torch", "future.apply", "logger", "jsonlite"
   )
   
   missing_packages <- c()
+  missing_optional <- c()
+  
+  # 檢查必需套件
   for(pkg in required_packages) {
     if(!requireNamespace(pkg, quietly = TRUE)) {
       missing_packages <- c(missing_packages, pkg)
     }
   }
   
-  if(length(missing_packages) > 0) {
-    cat("❌ 缺少必要套件:", paste(missing_packages, collapse = ", "), "\n")
-    cat("請執行: install.packages(c(", paste0("'", missing_packages, "'", collapse = ", "), "))\n")
-    return(FALSE)
+  # 檢查可選套件
+  for(pkg in optional_packages) {
+    if(!requireNamespace(pkg, quietly = TRUE)) {
+      missing_optional <- c(missing_optional, pkg)
+    }
   }
   
-  cat("✅ 所有必要套件已安裝\n")
+  # 處理缺少的必需套件
+  if(length(missing_packages) > 0) {
+    cat("❌ 缺少必要套件:", paste(missing_packages, collapse = ", "), "\n")
+    
+    if(auto_install) {
+      cat("🔄 正在自動安裝缺少的套件...\n")
+      tryCatch({
+        install.packages(missing_packages, repos = "https://cran.rstudio.com/", dependencies = TRUE)
+        cat("✅ 套件安裝完成\n")
+      }, error = function(e) {
+        cat("❌ 自動安裝失敗:", e$message, "\n")
+        cat("請手動執行: install.packages(c(", paste0("'", missing_packages, "'", collapse = ", "), "))\n")
+        return(FALSE)
+      })
+    } else {
+      cat("請執行: install.packages(c(", paste0("'", missing_packages, "'", collapse = ", "), "))\n")
+      return(FALSE)
+    }
+  }
+  
+  # 處理缺少的可選套件
+  if(length(missing_optional) > 0) {
+    cat("⚠️  缺少可選套件:", paste(missing_optional, collapse = ", "), "\n")
+    
+    # 特別處理torch
+    if("torch" %in% missing_optional) {
+      cat("📝 注意: torch套件需要額外安裝步驟\n")
+      cat("1. install.packages('torch')\n")
+      cat("2. torch::install_torch()\n")
+    }
+    
+    if(auto_install) {
+      cat("🔄 正在安裝可選套件...\n")
+      tryCatch({
+        install.packages(missing_optional, repos = "https://cran.rstudio.com/", dependencies = TRUE)
+        cat("✅ 可選套件安裝完成\n")
+      }, error = function(e) {
+        cat("⚠️  可選套件安裝失敗:", e$message, "\n")
+      })
+    }
+  }
+  
+  cat("✅ 必要套件檢查完成\n")
   return(TRUE)
+}
+
+# ================================================================================
+# 9.5 錯誤恢復和Checkpoint機制
+# ================================================================================
+
+#' 創建checkpoint檔案
+#' @param checkpoint_id 檢查點ID
+#' @param data 要保存的資料
+#' @param checkpoint_dir 檢查點目錄
+#' @param verbose 是否顯示詳細資訊
+create_checkpoint <- function(checkpoint_id, data, checkpoint_dir = OUTPUT_PATHS$checkpoints, verbose = TRUE) {
+  if(!dir.exists(checkpoint_dir)) {
+    dir.create(checkpoint_dir, recursive = TRUE)
+  }
+  
+  checkpoint_file <- file.path(checkpoint_dir, paste0(checkpoint_id, "_checkpoint.rds"))
+  
+  tryCatch({
+    saveRDS(data, checkpoint_file)
+    
+    if(verbose) {
+      cat("📝 Checkpoint已創建:", basename(checkpoint_file), "\n")
+    }
+    
+    return(checkpoint_file)
+    
+  }, error = function(e) {
+    warning("創建Checkpoint失敗: ", e$message)
+    return(NULL)
+  })
+}
+
+#' 載入checkpoint檔案
+#' @param checkpoint_id 檢查點ID
+#' @param checkpoint_dir 檢查點目錄
+#' @param verbose 是否顯示詳細資訊
+#' @return checkpoint資料或NULL
+load_checkpoint <- function(checkpoint_id, checkpoint_dir = OUTPUT_PATHS$checkpoints, verbose = TRUE) {
+  checkpoint_file <- file.path(checkpoint_dir, paste0(checkpoint_id, "_checkpoint.rds"))
+  
+  if(!file.exists(checkpoint_file)) {
+    if(verbose) {
+      cat("📝 未找到checkpoint:", basename(checkpoint_file), "\n")
+    }
+    return(NULL)
+  }
+  
+  tryCatch({
+    data <- readRDS(checkpoint_file)
+    
+    if(verbose) {
+      cat("📥 載入checkpoint:", basename(checkpoint_file), "\n")
+    }
+    
+    return(data)
+    
+  }, error = function(e) {
+    warning("載入Checkpoint失敗: ", e$message)
+    return(NULL)
+  })
+}
+
+#' 檢查任務是否已完成
+#' @param task_id 任務ID
+#' @param output_dir 輸出目錄
+#' @return 是否已完成
+is_task_completed <- function(task_id, output_dir = OUTPUT_PATHS$models) {
+  done_file <- file.path(output_dir, paste0(task_id, ".done"))
+  return(file.exists(done_file))
+}
+
+#' 標記任務完成
+#' @param task_id 任務ID
+#' @param output_dir 輸出目錄
+#' @param metadata 任務元資料
+#' @param verbose 是否顯示詳細資訊
+mark_task_completed <- function(task_id, output_dir = OUTPUT_PATHS$models, metadata = list(), verbose = TRUE) {
+  if(!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+  }
+  
+  done_file <- file.path(output_dir, paste0(task_id, ".done"))
+  
+  # 創建完成記錄
+  completion_record <- list(
+    task_id = task_id,
+    completed_at = Sys.time(),
+    metadata = metadata,
+    version = "1.0"
+  )
+  
+  tryCatch({
+    writeLines(jsonlite::toJSON(completion_record, pretty = TRUE), done_file)
+    
+    if(verbose) {
+      cat("✅ 任務已標記完成:", task_id, "\n")
+    }
+    
+    return(TRUE)
+    
+  }, error = function(e) {
+    warning("標記任務完成失敗: ", e$message)
+    return(FALSE)
+  })
+}
+
+#' 安全執行函數（帶錯誤恢復）
+#' @param func 要執行的函數
+#' @param args 函數參數
+#' @param task_id 任務ID
+#' @param max_retries 最大重試次數
+#' @param retry_delay 重試延遲（秒）
+#' @param verbose 是否顯示詳細資訊
+safe_execute <- function(func, args = list(), task_id = NULL, max_retries = 3, retry_delay = 5, verbose = TRUE) {
+  # 檢查任務是否已完成
+  if(!is.null(task_id) && is_task_completed(task_id)) {
+    if(verbose) {
+      cat("⏭️  任務已完成，跳過:", task_id, "\n")
+    }
+    return(list(success = TRUE, result = NULL, skipped = TRUE))
+  }
+  
+  for(attempt in 1:max_retries) {
+    if(verbose && attempt > 1) {
+      cat("🔄 重試第", attempt, "次...\n")
+    }
+    
+    tryCatch({
+      # 執行函數
+      result <- do.call(func, args)
+      
+      # 標記任務完成
+      if(!is.null(task_id)) {
+        mark_task_completed(task_id, metadata = list(
+          attempt = attempt,
+          success = TRUE,
+          execution_time = Sys.time()
+        ))
+      }
+      
+      return(list(success = TRUE, result = result, skipped = FALSE))
+      
+    }, error = function(e) {
+      error_msg <- e$message
+      
+      if(verbose) {
+        cat("❌ 執行失敗 (嘗試", attempt, "/", max_retries, "):", error_msg, "\n")
+      }
+      
+      # 如果不是最後一次嘗試，等待後重試
+      if(attempt < max_retries) {
+        if(verbose) {
+          cat("⏰ 等待", retry_delay, "秒後重試...\n")
+        }
+        Sys.sleep(retry_delay)
+      } else {
+        # 最後一次嘗試失敗
+        if(verbose) {
+          cat("💥 所有重試都失敗了\n")
+        }
+        return(list(success = FALSE, result = NULL, error = error_msg, skipped = FALSE))
+      }
+    })
+  }
+}
+
+#' 清理資源（GPU記憶體等）
+#' @param clear_gpu 是否清理GPU記憶體
+#' @param run_gc 是否運行垃圾回收
+#' @param verbose 是否顯示詳細資訊
+cleanup_resources <- function(clear_gpu = TRUE, run_gc = TRUE, verbose = TRUE) {
+  if(run_gc) {
+    if(verbose) {
+      cat("🧹 執行垃圾回收...\n")
+    }
+    gc()
+  }
+  
+  if(clear_gpu && requireNamespace("torch", quietly = TRUE)) {
+    tryCatch({
+      if(torch::cuda_is_available()) {
+        if(verbose) {
+          cat("🔥 清理GPU記憶體...\n")
+        }
+        torch::cuda_empty_cache()
+        
+        if(verbose) {
+          gpu_memory <- torch::cuda_memory_allocated(0) / 1024^3
+          cat("💾 當前GPU記憶體使用:", round(gpu_memory, 2), "GB\n")
+        }
+      }
+    }, error = function(e) {
+      if(verbose) {
+        cat("⚠️  GPU記憶體清理跳過（torch未完全安裝）\n")
+      }
+    })
+  }
 }
 
 # 創建時間戳

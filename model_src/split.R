@@ -8,20 +8,25 @@ cat("✂️  載入資料切分模組...\n")
 # 1. 時序切分核心函數
 # ================================================================================
 
-#' 時間序列資料切分
+#' 時間序列交叉驗證切分 (符合規劃要求)
 #' @param dataset aqi_dataset 物件
-#' @param train_ratio 訓練集比例 (預設0.7)
-#' @param val_ratio 驗證集比例 (預設0.1)
 #' @param test_ratio 測試集比例 (預設0.2)
+#' @param val_ratio 驗證集比例 (預設0.1，從剩餘資料中切分)
 #' @param method 切分方法 ("sequential", "stratified")
 #' @param verbose 是否顯示詳細資訊
-#' @return 切分索引物件
-time_split <- function(dataset, 
-                      train_ratio = 0.7, 
-                      val_ratio = 0.1, 
-                      test_ratio = 0.2,
-                      method = "sequential",
-                      verbose = TRUE) {
+#' @return 切分索引物件，包含 train_idx, val_idx, test_idx
+time_cv <- function(dataset, 
+                   test_ratio = 0.2,
+                   val_ratio = 0.1,
+                   method = "sequential",
+                   verbose = TRUE) {
+  
+  # 計算訓練集比例
+  train_ratio <- 1.0 - test_ratio - val_ratio
+  
+  if(train_ratio <= 0) {
+    stop("訓練集比例必須大於0，請調整test_ratio和val_ratio")
+  }
   
   # 驗證輸入
   if(!inherits(dataset, "aqi_dataset")) {

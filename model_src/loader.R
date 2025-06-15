@@ -51,6 +51,194 @@ create_dataset <- function(x, y, features, data_type, metadata = list()) {
   return(dataset)
 }
 
+# ================================================================================
+# 1.5 Scaler 持久化功能
+# ================================================================================
+
+#' 保存標準化參數
+#' @param scaler_data 包含均值和標準差的列表
+#' @param file_path 保存路徑
+#' @param data_type 資料類型
+#' @param verbose 是否顯示詳細資訊
+save_scaler <- function(scaler_data, file_path, data_type = "unknown", verbose = TRUE) {
+  # 驗證輸入
+  required_fields <- c("mean", "sd", "features")
+  missing_fields <- setdiff(required_fields, names(scaler_data))
+  if(length(missing_fields) > 0) {
+    stop("Scaler資料缺少必要欄位: ", paste(missing_fields, collapse = ", "))
+  }
+  
+  # 創建完整的scaler物件
+  scaler_obj <- list(
+    mean = scaler_data$mean,
+    sd = scaler_data$sd,
+    features = scaler_data$features,
+    data_type = data_type,
+    n_features = length(scaler_data$features),
+    created_at = Sys.time(),
+    version = "1.0"
+  )
+  
+  class(scaler_obj) <- c("aqi_scaler", "list")
+  
+  # 創建目錄（如果不存在）
+  dir_path <- dirname(file_path)
+  if(!dir.exists(dir_path)) {
+    dir.create(dir_path, recursive = TRUE)
+  }
+  
+  # 保存檔案
+  tryCatch({
+    saveRDS(scaler_obj, file_path)
+    
+    if(verbose) {
+      cat("✅ Scaler已保存:", basename(file_path), "\n")
+      cat("  資料類型:", data_type, "\n")
+      cat("  特徵數量:", length(scaler_data$features), "\n")
+    }
+    
+    return(TRUE)
+    
+  }, error = function(e) {
+    stop("保存Scaler失敗: ", e$message)
+  })
+}
+
+#' 載入標準化參數
+#' @param file_path 檔案路徑
+#' @param verbose 是否顯示詳細資訊
+#' @return scaler物件
+load_scaler <- function(file_path, verbose = TRUE) {
+  if(!file.exists(file_path)) {
+    stop("Scaler檔案不存在: ", file_path)
+  }
+  
+  tryCatch({
+    scaler_obj <- readRDS(file_path)
+    
+    # 驗證scaler物件
+    if(!inherits(scaler_obj, "aqi_scaler")) {
+      warning("載入的檔案不是有效的AQI scaler物件")
+    }
+    
+    # 檢查必要欄位
+    required_fields <- c("mean", "sd", "features")
+    missing_fields <- setdiff(required_fields, names(scaler_obj))
+    if(length(missing_fields) > 0) {
+      stop("Scaler物件缺少必要欄位: ", paste(missing_fields, collapse = ", "))
+    }
+    
+    if(verbose) {
+      cat("📥 載入Scaler:", basename(file_path), "\n")
+      cat("  資料類型:", if("data_type" %in% names(scaler_obj)) scaler_obj$data_type else "未知", "\n")
+      cat("  特徵數量:", length(scaler_obj$features), "\n")
+      cat("  創建時間:", if("created_at" %in% names(scaler_obj)) format(scaler_obj$created_at, "%Y-%m-%d %H:%M:%S") else "未知", "\n")
+    }
+    
+    return(scaler_obj)
+    
+  }, error = function(e) {
+    stop("載入Scaler失敗 (", basename(file_path), "): ", e$message)
+  })
+}
+
+#' 應用標準化變換
+#' @param data 原始資料陣列 [n_windows, seq_len, n_features]
+#' @param scaler scaler物件
+#' @param verbose 是否顯示詳細資訊
+#' @return 標準化後的資料陣列
+apply_scaler <- function(data, scaler, verbose = TRUE) {
+  if(!inherits(scaler, "aqi_scaler")) {
+    stop("scaler必須是aqi_scaler物件")
+  }
+  
+  if(!is.array(data) || length(dim(data)) != 3) {
+    stop("data必須是三維陣列 [n_windows, seq_len, n_features]")
+  }
+  
+  n_features <- dim(data)[3]
+  if(n_features != length(scaler$features)) {
+    stop("資料特徵數量與scaler不匹配: ", n_features, " vs ", length(scaler$features))
+  }
+  
+  # 應用標準化
+  normalized_data <- data
+  for(i in 1:n_features) {
+    normalized_data[, , i] <- (data[, , i] - scaler$mean[i]) / scaler$sd[i]
+  }
+  
+  if(verbose) {
+    cat("✅ 標準化變換完成\n")
+    cat("  處理特徵數:", n_features, "\n")
+  }
+  
+  return(normalized_data)
+}
+
+#' 反向標準化變換
+#' @param normalized_data 標準化資料陣列
+#' @param scaler scaler物件
+#' @param feature_indices 要反向變換的特徵索引（預設全部）
+#' @param verbose 是否顯示詳細資訊
+#' @return 反標準化後的資料陣列
+inverse_scaler <- function(normalized_data, scaler, feature_indices = NULL, verbose = TRUE) {
+  if(!inherits(scaler, "aqi_scaler")) {
+    stop("scaler必須是aqi_scaler物件")
+  }
+  
+  if(is.null(feature_indices)) {
+    feature_indices <- 1:length(scaler$features)
+  }
+  
+  # 應用反向標準化
+  if(is.array(normalized_data) && length(dim(normalized_data)) == 3) {
+    # 三維陣列情況
+    original_data <- normalized_data
+    for(i in feature_indices) {
+      original_data[, , i] <- normalized_data[, , i] * scaler$sd[i] + scaler$mean[i]
+    }
+  } else if(is.vector(normalized_data) || is.matrix(normalized_data)) {
+    # 向量或矩陣情況
+    original_data <- normalized_data
+    for(i in feature_indices) {
+      if(is.matrix(normalized_data)) {
+        original_data[, i] <- normalized_data[, i] * scaler$sd[i] + scaler$mean[i]
+      } else {
+        original_data[i] <- normalized_data[i] * scaler$sd[i] + scaler$mean[i]
+      }
+    }
+  } else {
+    stop("不支援的資料格式")
+  }
+  
+  if(verbose) {
+    cat("✅ 反標準化變換完成\n")
+  }
+  
+  return(original_data)
+}
+
+#' 打印scaler摘要
+print.aqi_scaler <- function(x, ...) {
+  cat("AQI 標準化參數物件\n")
+  cat("==================\n")
+  cat("資料類型:", if("data_type" %in% names(x)) x$data_type else "未知", "\n")
+  cat("特徵數量:", length(x$features), "\n")
+  cat("版本:", if("version" %in% names(x)) x$version else "未知", "\n")
+  cat("創建時間:", if("created_at" %in% names(x)) format(x$created_at, "%Y-%m-%d %H:%M:%S") else "未知", "\n")
+  
+  cat("\n統計摘要:\n")
+  cat("均值範圍: [", round(min(x$mean, na.rm = TRUE), 3), ", ", round(max(x$mean, na.rm = TRUE), 3), "]\n", sep = "")
+  cat("標準差範圍: [", round(min(x$sd, na.rm = TRUE), 3), ", ", round(max(x$sd, na.rm = TRUE), 3), "]\n", sep = "")
+  
+  if(length(x$features) <= 10) {
+    cat("\n特徵名稱:\n")
+    for(i in 1:length(x$features)) {
+      cat("  ", x$features[i], ": μ=", round(x$mean[i], 3), ", σ=", round(x$sd[i], 3), "\n", sep = "")
+    }
+  }
+}
+
 #' 打印資料集摘要
 #' @param x aqi_dataset 物件
 print.aqi_dataset <- function(x, ...) {
@@ -68,7 +256,144 @@ print.aqi_dataset <- function(x, ...) {
 }
 
 # ================================================================================
-# 2. 小檔案載入函數
+# 2. 核心載入函數 (符合規劃要求)
+# ================================================================================
+
+#' 載入滑動窗口資料 (統一介面)
+#' @param path RDS檔案路徑
+#' @param verbose 是否顯示詳細資訊
+#' @return 統一格式的資料集物件
+load_windows <- function(path, verbose = TRUE) {
+  if(!file.exists(path)) {
+    stop("檔案不存在: ", path)
+  }
+  
+  if(verbose) {
+    file_size <- file.info(path)$size
+    cat("📄 載入滑動窗口資料:", basename(path), 
+        "(", format_file_size(file_size), ")\n")
+  }
+  
+  # 讀取RDS檔案
+  tryCatch({
+    w <- readRDS(path)
+    
+    # 驗證必要欄位
+    required_fields <- c("X_raw", "y_raw")
+    missing_fields <- setdiff(required_fields, names(w))
+    if(length(missing_fields) > 0) {
+      stop("檔案缺少必要欄位: ", paste(missing_fields, collapse = ", "))
+    }
+    
+    # 處理 features 欄位（如果缺失則自動生成）
+    if(!"features" %in% names(w)) {
+      if(verbose) {
+        cat("⚠️  檔案缺少 features 欄位，自動生成特徵名稱\n")
+      }
+      
+      # 從 X_raw 維度推斷特徵數量
+      if(is.array(w$X_raw) && length(dim(w$X_raw)) == 3) {
+        n_features <- dim(w$X_raw)[3]
+        w$features <- paste0("feature_", 1:n_features)
+        
+        if(verbose) {
+          cat("  生成", n_features, "個特徵名稱:", paste(head(w$features, 3), collapse = ", "), "...\n")
+        }
+      } else {
+        stop("無法從 X_raw 推斷特徵數量")
+      }
+    }
+    
+    # 提取資料類型
+    data_type <- if("data_type" %in% names(w)) {
+      w$data_type
+    } else {
+      # 從檔案路徑推斷
+      if(grepl("Separate_Normalization", path)) "separate_norm"
+      else if(grepl("Separate", path)) "separate"
+      else if(grepl("Combine_Normalization", path)) "combine_norm"
+      else if(grepl("Combine", path)) "combine"
+      else "unknown"
+    }
+    
+    # 返回統一格式 (符合規劃要求)
+    result <- list(
+      x = w$X_raw,           # array(n, 72, n_feat)
+      y = w$y_raw,           # numeric(n)
+      features = w$features, # character(n_feat)
+      data_type = data_type  # 來源標籤
+    )
+    
+    # 添加維度資訊
+    result$n_windows <- dim(result$x)[1]
+    result$seq_len <- dim(result$x)[2]
+    result$n_features <- dim(result$x)[3]
+    
+    # 添加元資料
+    result$metadata <- list(
+      source_file = basename(path),
+      file_size = file.info(path)$size,
+      load_time = Sys.time()
+    )
+    
+    class(result) <- c("aqi_dataset", "list")
+    
+    if(verbose) {
+      cat("✅ 載入完成:", format(result$n_windows, big.mark = ","), "個窗口\n")
+      cat("  序列長度:", result$seq_len, "小時\n")
+      cat("  特徵數量:", result$n_features, "\n")
+      cat("  資料類型:", result$data_type, "\n")
+    }
+    
+    return(result)
+    
+  }, error = function(e) {
+    stop("載入檔案失敗 (", basename(path), "): ", e$message)
+  })
+}
+
+#' 載入索引檔案 (大檔案支援)
+#' @param index_rds 索引檔案路徑
+#' @param verbose 是否顯示詳細資訊
+#' @return 資料集物件列表
+load_index <- function(index_rds, verbose = TRUE) {
+  if(!file.exists(index_rds)) {
+    stop("索引檔案不存在: ", index_rds)
+  }
+  
+  if(verbose) {
+    cat("📋 載入索引檔案:", basename(index_rds), "\n")
+  }
+  
+  tryCatch({
+    idx <- readRDS(index_rds)
+    
+    # 驗證索引結構
+    if(!"chunk_files" %in% names(idx) || !"output_dir" %in% names(idx)) {
+      stop("無效的索引檔案格式")
+    }
+    
+    # 載入所有區塊檔案
+    datasets <- lapply(idx$chunk_files, function(cf) {
+      chunk_path <- file.path(idx$output_dir, cf)
+      load_windows(chunk_path, verbose = FALSE)
+    })
+    
+    if(verbose) {
+      total_windows <- sum(sapply(datasets, function(d) d$n_windows))
+      cat("✅ 索引載入完成:", length(datasets), "個區塊,", 
+          format(total_windows, big.mark = ","), "個窗口\n")
+    }
+    
+    return(datasets)
+    
+  }, error = function(e) {
+    stop("載入索引失敗 (", basename(index_rds), "): ", e$message)
+  })
+}
+
+# ================================================================================
+# 3. 小檔案載入函數 (向後相容)
 # ================================================================================
 
 #' 載入單一小檔案 (RDS格式)

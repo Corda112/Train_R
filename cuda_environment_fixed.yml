@@ -1,0 +1,64 @@
+name: cuda_datascience
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+  # Python基礎環境
+  - python=3.11
+  - pip
+  
+  # 數據科學核心套件
+  - numpy
+  - pandas
+  - scikit-learn
+  - scipy
+  - matplotlib
+  - seaborn
+  - plotly
+  
+  # Jupyter相關
+  - jupyter
+  - jupyterlab
+  - notebook
+  - ipykernel
+  - ipywidgets
+  
+  # 其他工具
+  - tqdm
+  - h5py
+  - openpyxl
+  - requests
+  - beautifulsoup4
+  
+  # pip安裝的套件
+  - pip:
+    # PyTorch with CUDA (通過pip安裝最新版本)
+    - torch
+    - torchvision
+    - torchaudio
+    - --index-url https://download.pytorch.org/whl/cu121
+    
+    # TensorFlow GPU
+    - tensorflow[and-cuda]
+    
+    # 機器學習套件
+    - xgboost
+    - lightgbm
+    - catboost
+    - optuna
+    - hyperopt
+    
+    # 深度學習相關
+    - transformers
+    - datasets
+    - accelerate
+    - wandb
+    - tensorboard
+    
+    # 圖像處理
+    - opencv-python
+    - pillow
+    - imageio 
