@@ -722,7 +722,7 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
             
             # 預測和評估
             lgbm_pred <- predict_lgbm(lgbm_model, datasets$test, verbose = verbose)
-            lgbm_eval <- evaluate_predictions(datasets$test$y, lgbm_pred, verbose = verbose)
+            lgbm_eval <- evaluate_predictions(datasets$test$y, lgbm_pred)
             
             # 儲存模型
             model_name <- paste0("lgbm_", dtype, "_", tools::file_path_sans_ext(basename(fp)))
@@ -763,7 +763,7 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
             
             # 預測和評估
             lstm_pred <- predict_lstm(lstm_model, datasets$test, verbose = verbose)
-            lstm_eval <- evaluate_predictions(datasets$test$y, lstm_pred, verbose = verbose)
+            lstm_eval <- evaluate_predictions(datasets$test$y, lstm_pred)
             
             # 儲存模型
             model_name <- paste0("lstm_", dtype, "_", tools::file_path_sans_ext(basename(fp)))
