@@ -791,7 +791,7 @@ scan_organized_models <- function(models_dir = "model_outputs/models_organized/"
     # 檢查是否包含model.rds
     model_file <- file.path(model_dir, "model.rds")
     
-    if(file.exists(model_file)) {
+    if(!is.na(model_file) && file.exists(model_file)) {
       
       # 從路徑提取模型資訊
       rel_path <- gsub(paste0("^", models_dir, "/?"), "", model_dir)
@@ -961,9 +961,9 @@ analyze_model_comparison <- function(registry, output_dir = "analysis_outputs/")
   lstm_performance <- data.table()
   for(i in 1:nrow(lstm_models)) {
     model_info <- lstm_models[i]
-    model_file <- model_info$model_file
+    model_file <- model_info$complete_file  # 修復：使用正確的欄位名稱
     
-    if(file.exists(model_file)) {
+    if(!is.na(model_file) && file.exists(model_file)) {
       tryCatch({
         model_obj <- readRDS(model_file)
         
@@ -1002,7 +1002,7 @@ analyze_model_comparison <- function(registry, output_dir = "analysis_outputs/")
     )
     
     # 如果有重要度文件，計算特徵數量
-    if(model_info$has_importance && file.exists(model_info$importance_file)) {
+    if(model_info$has_importance && !is.na(model_info$importance_file) && file.exists(model_info$importance_file)) {
       importance_data <- fread(model_info$importance_file)
       performance_data$feature_count <- nrow(importance_data)
     }
@@ -1017,7 +1017,7 @@ analyze_model_comparison <- function(registry, output_dir = "analysis_outputs/")
   for(i in 1:min(5, nrow(lgbm_models))) {  # 分析前5個模型
     model_info <- lgbm_models[i]
     
-    if(model_info$has_importance && file.exists(model_info$importance_file)) {
+    if(model_info$has_importance && !is.na(model_info$importance_file) && file.exists(model_info$importance_file)) {
       importance_data <- fread(model_info$importance_file)
       
       # 取前10個重要特徵
@@ -1329,7 +1329,7 @@ generate_enhanced_html_report <- function(registry, analysis_results = NULL, com
          <td><span class="badge bg-', if(model$model_type == "lgbm") "success" else "info", '">', 
          toupper(model$model_type), '</span></td>
          <td>', model$dataset_type, '</td>
-         <td>', if(!is.na(model$importance_file)) "✅" else "❌", '</td>
+         <td>', if(!is.na(model$importance_file) && length(model$importance_file) > 0 && model$importance_file != "") "✅" else "❌", '</td>
          <td>', status_badge, '</td>
        </tr>'
     )
@@ -1487,7 +1487,7 @@ analyze_lgbm_importance_advanced <- function(model_info, output_dir) {
   
   # 1. 讀取重要度數據 (優先使用重組後的檔案)
   importance_file <- NULL
-  if(!is.na(model_info$importance_file) && file.exists(model_info$importance_file)) {
+  if(!is.na(model_info$importance_file) && !is.na(model_info$importance_file) && file.exists(model_info$importance_file)) {
     importance_file <- model_info$importance_file
   } else if(!is.na(model_info$original_importance_file) && file.exists(model_info$original_importance_file)) {
     importance_file <- model_info$original_importance_file
@@ -1631,7 +1631,7 @@ analyze_shap_single_model <- function(model_info, output_dir, sample_size = 100)
       
       # 讀取重要度數據來獲取特徵名稱
       importance_file <- NULL
-      if(!is.na(model_info$importance_file) && file.exists(model_info$importance_file)) {
+      if(!is.na(model_info$importance_file) && !is.na(model_info$importance_file) && file.exists(model_info$importance_file)) {
         importance_file <- model_info$importance_file
       }
       
@@ -1844,7 +1844,7 @@ generate_enhanced_html_report <- function(registry, analysis_results = NULL, com
          <td><span class="badge bg-', if(model$model_type == "lgbm") "success" else "info", '">', 
          toupper(model$model_type), '</span></td>
          <td>', model$dataset_type, '</td>
-         <td>', if(!is.na(model$importance_file)) "✅" else "❌", '</td>
+         <td>', if(!is.na(model$importance_file) && length(model$importance_file) > 0 && model$importance_file != "") "✅" else "❌", '</td>
          <td>', status_badge, '</td>
        </tr>'
     )
@@ -1932,9 +1932,9 @@ analyze_model_comparison <- function(registry, output_dir = "analysis_outputs/")
   lstm_performance <- data.table()
   for(i in 1:nrow(lstm_models)) {
     model_info <- lstm_models[i]
-    model_file <- model_info$model_file
+    model_file <- model_info$complete_file  # 修復：使用正確的欄位名稱
     
-    if(file.exists(model_file)) {
+    if(!is.na(model_file) && file.exists(model_file)) {
       tryCatch({
         model_obj <- readRDS(model_file)
         
@@ -1973,7 +1973,7 @@ analyze_model_comparison <- function(registry, output_dir = "analysis_outputs/")
     )
     
     # 如果有重要度文件，計算特徵數量
-    if(model_info$has_importance && file.exists(model_info$importance_file)) {
+    if(model_info$has_importance && !is.na(model_info$importance_file) && file.exists(model_info$importance_file)) {
       importance_data <- fread(model_info$importance_file)
       performance_data$feature_count <- nrow(importance_data)
     }
@@ -1988,7 +1988,7 @@ analyze_model_comparison <- function(registry, output_dir = "analysis_outputs/")
   for(i in 1:min(5, nrow(lgbm_models))) {  # 分析前5個模型
     model_info <- lgbm_models[i]
     
-    if(model_info$has_importance && file.exists(model_info$importance_file)) {
+    if(model_info$has_importance && !is.na(model_info$importance_file) && file.exists(model_info$importance_file)) {
       importance_data <- fread(model_info$importance_file)
       
       # 取前10個重要特徵

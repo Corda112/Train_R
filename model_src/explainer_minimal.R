@@ -78,8 +78,10 @@ scan_model_outputs <- function(models_dir = "model_outputs/models/") {
       # 生成模型ID
       model_id <- paste(model_type, dataset_type, detail_name, sep = "_")
       
-      # 構建路徑前綴（移除檔案擴展名）
-      path_prefix <- file.path(models_dir, gsub("_complete\\.rds$|\\.rds_complete\\.rds$|\\.pt_complete\\.rds$", "", file_name))
+      # 修復：構建路徑前綴（確保沒有雙斜線）
+      path_prefix <- file.path(dirname(file_path), gsub("_complete\\.rds$|\\.rds_complete\\.rds$|\\.pt_complete\\.rds$", "", file_name))
+      # 標準化路徑分隔符
+      path_prefix <- normalizePath(path_prefix, winslash = "/", mustWork = FALSE)
       
       # 檢查相關檔案是否存在
       importance_file <- paste0(path_prefix, "_importance.csv")
@@ -92,8 +94,8 @@ scan_model_outputs <- function(models_dir = "model_outputs/models/") {
         detail_name = detail_name,
         path_prefix = path_prefix,
         complete_file = file_path,
-        importance_file = if(file.exists(importance_file)) importance_file else NA,
-        original_importance_file = if(file.exists(original_importance_file)) original_importance_file else NA,
+        importance_file = if(file.exists(importance_file)) importance_file else NA_character_,
+        original_importance_file = if(file.exists(original_importance_file)) original_importance_file else NA_character_,
         exists_importance = file.exists(importance_file),
         exists_original_importance = file.exists(original_importance_file)
       )))
@@ -134,11 +136,27 @@ create_model_registry <- function(models_info, output_path = "model_outputs/expl
   registry$model_size_mb <- NA_real_
   registry$has_importance <- FALSE
   registry$has_original_importance <- FALSE
+  registry$importance_file <- NA_character_
+  registry$original_importance_file <- NA_character_
   
   # 載入每個模型的詳細資訊
   for(i in 1:nrow(registry)) {
     tryCatch({
       complete_file <- models_info[i, complete_file]
+      
+      # 檢查檔案是否存在且可讀取
+      if(!file.exists(complete_file)) {
+        cat("⚠️ 檔案不存在:", complete_file, "\n")
+        next
+      }
+      
+      # 檢查檔案大小
+      file_info <- file.info(complete_file)
+      if(is.na(file_info$size) || file_info$size == 0) {
+        cat("⚠️ 檔案為空:", complete_file, "\n")
+        next
+      }
+      
       model_obj <- readRDS(complete_file)
       
       # 提取模型資訊
@@ -157,8 +175,6 @@ create_model_registry <- function(models_info, output_path = "model_outputs/expl
             registry$test_rmse[i] <- as.numeric(model_obj$metrics$test_rmse)
           }
         }
-        registry$has_importance[i] <- models_info[i, exists_importance]
-        registry$has_original_importance[i] <- models_info[i, exists_original_importance]
         
       } else if(registry[i, model_type] == "lstm") {
         if(!is.null(model_obj$architecture) && !is.null(model_obj$architecture$input_size)) {
@@ -178,10 +194,13 @@ create_model_registry <- function(models_info, output_path = "model_outputs/expl
       }
       
       # 檔案大小
-      file_info <- file.info(complete_file)
-      if(!is.na(file_info$size)) {
-        registry$model_size_mb[i] <- round(file_info$size / 1024^2, 2)
-      }
+      registry$model_size_mb[i] <- round(file_info$size / 1024^2, 2)
+      
+      # 重要度檔案資訊
+      registry$has_importance[i] <- models_info[i, exists_importance]
+      registry$has_original_importance[i] <- models_info[i, exists_original_importance]
+      registry$importance_file[i] <- models_info[i, importance_file]
+      registry$original_importance_file[i] <- models_info[i, original_importance_file]
       
     }, error = function(e) {
       cat("⚠️ 處理模型失敗:", registry[i, id], "-", e$message, "\n")
@@ -198,11 +217,7 @@ create_model_registry <- function(models_info, output_path = "model_outputs/expl
   
   cat("✅ 模型註冊表已保存:", output_path, "\n")
   cat("  總模型數:", nrow(registry), "\n")
-  
-  valid_rmse <- registry[!is.na(test_rmse), test_rmse]
-  if(length(valid_rmse) > 0) {
-    cat("  平均測試RMSE:", round(mean(valid_rmse), 4), "\n")
-  }
+  cat("  可分析模型:", sum(registry$has_importance, na.rm = TRUE), "個\n")
   
   return(registry)
 }
