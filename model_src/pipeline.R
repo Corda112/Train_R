@@ -158,34 +158,47 @@ train_single_data_type <- function(data_type, models = c("lgbm", "lstm"),
     
     tryCatch({
       if(model_type == "lgbm") {
+        # 設定checkpoint路徑
+        checkpoint_dir <- file.path(OUTPUT_PATHS$checkpoints, data_type)
+        if(!dir.exists(checkpoint_dir)) dir.create(checkpoint_dir, recursive = TRUE, showWarnings = FALSE)
+        checkpoint_path <- file.path(checkpoint_dir, paste0("lgbm_", data_type, "_checkpoint.rds"))
+        
         # 訓練LightGBM模型
         model <- train_lgbm(
           train_dataset = datasets$train,
           val_dataset = datasets$val,
           params = LGBM_PARAMS,
+          save_checkpoint = TRUE,
+          checkpoint_path = checkpoint_path,
           verbose = verbose
         )
         
         # 預測
         test_predictions <- predict_lgbm(model, datasets$test, verbose = verbose)
         
-        # 儲存模型
+        # 儲存模型（使用一致的基礎路徑，不含副檔名）
         model_path <- file.path(output_dir, paste0("lgbm_", data_type))
         save_lgbm_model(model, model_path, save_importance = TRUE)
         
       } else if(model_type == "lstm") {
+        # 設定checkpoint路徑
+        checkpoint_dir <- file.path(OUTPUT_PATHS$checkpoints, data_type)
+        if(!dir.exists(checkpoint_dir)) dir.create(checkpoint_dir, recursive = TRUE, showWarnings = FALSE)
+        checkpoint_path <- file.path(checkpoint_dir, paste0("lstm_", data_type, "_checkpoint.rds"))
+        
         # 訓練LSTM模型
         model <- train_lstm(
           train_dataset = datasets$train,
           val_dataset = datasets$val,
           params = LSTM_PARAMS,
+          checkpoint_path = checkpoint_path,
           verbose = verbose
         )
         
         # 預測
         test_predictions <- predict_lstm(model, datasets$test, verbose = verbose)
         
-        # 儲存模型
+        # 儲存模型（使用一致的基礎路徑，不含副檔名）
         model_path <- file.path(output_dir, paste0("lstm_", data_type))
         save_lstm_model(model, model_path)
         
@@ -200,6 +213,9 @@ train_single_data_type <- function(data_type, models = c("lgbm", "lstm"),
       
       # 評估模型
       evaluation <- evaluate_predictions(datasets$test$y, test_predictions)
+      
+      # 添加 test_rmse 欄位以便 registry 掃描器使用
+      evaluation$test_rmse <- evaluation$rmse
       
       # 將評估結果添加到模型物件
       model$evaluation <- evaluation
@@ -795,10 +811,17 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
               }
               
               tryCatch({
+                # 設定checkpoint路徑
+                checkpoint_dir <- file.path(OUTPUT_PATHS$checkpoints, dtype)
+                if(!dir.exists(checkpoint_dir)) dir.create(checkpoint_dir, recursive = TRUE, showWarnings = FALSE)
+                checkpoint_path <- file.path(checkpoint_dir, paste0("lgbm_", dtype, "_", chunk_name, "_checkpoint.rds"))
+                
                 lgbm_model <- train_lgbm(
                   train_dataset = datasets$train,
                   val_dataset = datasets$val,
                   params = LGBM_PARAMS,
+                  save_checkpoint = TRUE,
+                  checkpoint_path = checkpoint_path,
                   verbose = verbose
                 )
                 
@@ -806,12 +829,15 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
             lgbm_pred <- predict_lgbm(lgbm_model, datasets$test, verbose = verbose)
             lgbm_eval <- evaluate_predictions(datasets$test$y, lgbm_pred)
             
+            # 添加 test_rmse 欄位以便 registry 掃描器使用
+            lgbm_eval$test_rmse <- lgbm_eval$rmse
+            
             # 將評估結果添加到模型物件
             lgbm_model$evaluation <- lgbm_eval
             
-            # 儲存模型
+            # 儲存模型（移除副檔名，使用一致的基礎路徑）
             model_name <- paste0("lgbm_", dtype, "_", chunk_name)
-            model_path <- file.path(OUTPUT_PATHS$models, paste0(model_name, ".rds"))
+            model_path <- file.path(OUTPUT_PATHS$models, model_name)
             save_lgbm_model(lgbm_model, model_path, save_importance = TRUE)
                 
                 file_results$lgbm <- list(
@@ -839,10 +865,16 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
               }
               
               tryCatch({
+                # 設定checkpoint路徑
+                checkpoint_dir <- file.path(OUTPUT_PATHS$checkpoints, dtype)
+                if(!dir.exists(checkpoint_dir)) dir.create(checkpoint_dir, recursive = TRUE, showWarnings = FALSE)
+                checkpoint_path <- file.path(checkpoint_dir, paste0("lstm_", dtype, "_", chunk_name, "_checkpoint.rds"))
+                
                 lstm_model <- train_lstm(
                   train_dataset = datasets$train,
                   val_dataset = datasets$val,
                   params = LSTM_PARAMS,
+                  checkpoint_path = checkpoint_path,
                   verbose = verbose
                 )
                 
@@ -850,12 +882,15 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
             lstm_pred <- predict_lstm(lstm_model, datasets$test, verbose = verbose)
             lstm_eval <- evaluate_predictions(datasets$test$y, lstm_pred)
             
+            # 添加 test_rmse 欄位以便 registry 掃描器使用
+            lstm_eval$test_rmse <- lstm_eval$rmse
+            
             # 將評估結果添加到模型物件
             lstm_model$evaluation <- lstm_eval
             
-            # 儲存模型
+            # 儲存模型（移除副檔名，使用一致的基礎路徑）
             model_name <- paste0("lstm_", dtype, "_", chunk_name)
-            model_path <- file.path(OUTPUT_PATHS$models, paste0(model_name, ".pt"))
+            model_path <- file.path(OUTPUT_PATHS$models, model_name)
             save_lstm_model(lstm_model, model_path)
                 
                 file_results$lstm <- list(
@@ -958,10 +993,18 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
           }
           
           tryCatch({
+            # 設定checkpoint路徑
+            file_key <- tools::file_path_sans_ext(basename(fp))
+            checkpoint_dir <- file.path(OUTPUT_PATHS$checkpoints, dtype)
+            if(!dir.exists(checkpoint_dir)) dir.create(checkpoint_dir, recursive = TRUE, showWarnings = FALSE)
+            checkpoint_path <- file.path(checkpoint_dir, paste0("lgbm_", dtype, "_", file_key, "_checkpoint.rds"))
+            
             lgbm_model <- train_lgbm(
               train_dataset = datasets$train,
               val_dataset = datasets$val,
               params = LGBM_PARAMS,
+              save_checkpoint = TRUE,
+              checkpoint_path = checkpoint_path,
               verbose = verbose
             )
             
@@ -969,12 +1012,15 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
             lgbm_pred <- predict_lgbm(lgbm_model, datasets$test, verbose = verbose)
             lgbm_eval <- evaluate_predictions(datasets$test$y, lgbm_pred)
             
+            # 添加 test_rmse 欄位以便 registry 掃描器使用
+            lgbm_eval$test_rmse <- lgbm_eval$rmse
+            
             # 將評估結果添加到模型物件
             lgbm_model$evaluation <- lgbm_eval
             
-            # 儲存模型
+            # 儲存模型（移除副檔名，使用一致的基礎路徑）
             model_name <- paste0("lgbm_", dtype, "_", tools::file_path_sans_ext(basename(fp)))
-            model_path <- file.path(OUTPUT_PATHS$models, paste0(model_name, ".rds"))
+            model_path <- file.path(OUTPUT_PATHS$models, model_name)
             save_lgbm_model(lgbm_model, model_path, save_importance = TRUE)
             
             file_results$lgbm <- list(
@@ -1002,10 +1048,17 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
           }
           
           tryCatch({
+            # 設定checkpoint路徑
+            file_key <- tools::file_path_sans_ext(basename(fp))
+            checkpoint_dir <- file.path(OUTPUT_PATHS$checkpoints, dtype)
+            if(!dir.exists(checkpoint_dir)) dir.create(checkpoint_dir, recursive = TRUE, showWarnings = FALSE)
+            checkpoint_path <- file.path(checkpoint_dir, paste0("lstm_", dtype, "_", file_key, "_checkpoint.rds"))
+            
             lstm_model <- train_lstm(
               train_dataset = datasets$train,
               val_dataset = datasets$val,
               params = LSTM_PARAMS,
+              checkpoint_path = checkpoint_path,
               verbose = verbose
             )
             
@@ -1013,12 +1066,15 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
             lstm_pred <- predict_lstm(lstm_model, datasets$test, verbose = verbose)
             lstm_eval <- evaluate_predictions(datasets$test$y, lstm_pred)
             
+            # 添加 test_rmse 欄位以便 registry 掃描器使用
+            lstm_eval$test_rmse <- lstm_eval$rmse
+            
             # 將評估結果添加到模型物件
             lstm_model$evaluation <- lstm_eval
             
-            # 儲存模型
+            # 儲存模型（移除副檔名，使用一致的基礎路徑）
             model_name <- paste0("lstm_", dtype, "_", tools::file_path_sans_ext(basename(fp)))
-            model_path <- file.path(OUTPUT_PATHS$models, paste0(model_name, ".pt"))
+            model_path <- file.path(OUTPUT_PATHS$models, model_name)
             save_lstm_model(lstm_model, model_path)
             
             file_results$lstm <- list(

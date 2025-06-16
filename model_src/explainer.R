@@ -37,7 +37,7 @@ generate_model_registry <- function(models_dir = "model_outputs/models",
   # 尋找所有代表完整模型的檔案
   model_files <- list.files(
     path = models_dir,
-    pattern = "(_complete\\.rds|_final\\.pt)$",
+    pattern = "(_complete\\.rds|_state\\.pt|_final\\.pt)$",
     recursive = TRUE,
     full.names = TRUE
   )
@@ -57,16 +57,20 @@ generate_model_registry <- function(models_dir = "model_outputs/models",
         return(NULL)
       }
       
-      model_type <- ifelse(grepl("\\.pt$", file_path), "lstm", "lgbm")
-      
       # 提取基礎路徑 (不含後綴)
-      base_path <- sub("(_complete\\.rds|_final\\.pt)$", "", file_path)
+      base_path <- sub("(_complete\\.rds|_state\\.pt|_final\\.pt)$", "", file_path)
       base_name <- basename(base_path)
       
-      parts <- strsplit(base_name, "_")[[1]]
-      dataset_type <- parts[2]
-      station <- if(length(parts) > 2) paste(parts[-(1:2)], collapse="_") else "all"
-      model_id <- paste(model_type, dataset_type, station, sep = "_")
+      # 判斷模型類型 (根據檔名前綴與副檔名)
+      if (grepl("^lstm_", base_name)) {
+        model_type <- "lstm"
+      } else if (grepl("^lgbm_", base_name)) {
+        model_type <- "lgbm"
+      } else if (grepl("\\.pt$", file_path)) {
+        model_type <- "lstm"
+      } else {
+        model_type <- "lgbm"
+      }
       
       # 讀取模型元數據
       test_rmse <- NA_real_
@@ -82,6 +86,11 @@ generate_model_registry <- function(models_dir = "model_outputs/models",
             test_rmse <- eval_obj$test_rmse
         }
       }
+      
+      parts <- strsplit(base_name, "_")[[1]]
+      dataset_type <- parts[2]
+      station <- if(length(parts) > 2) paste(parts[-(1:2)], collapse="_") else "all"
+      model_id <- paste(model_type, dataset_type, station, sep = "_")
       
       data.table(
         model_id = model_id,
