@@ -976,6 +976,23 @@ run_full_pipeline <- function(models = c("lgbm", "lstm"), max_files = NULL, verb
         # 載入資料 (使用統一介面)
         ds <- load_windows(fp, verbose = verbose)
         
+        # 額外驗證：確保特徵數量與資料維度匹配（修復關鍵問題）
+        actual_n_features <- dim(ds$x)[3]
+        provided_n_features <- length(ds$features)
+        if(actual_n_features != provided_n_features) {
+          if(verbose) {
+            cat("⚠️  檔案特徵不匹配，自動修正\n")
+            cat("    資料維度:", actual_n_features, "個特徵\n")
+            cat("    特徵名稱:", provided_n_features, "個\n")
+          }
+          # 重新生成匹配的特徵名稱
+          ds$features <- paste0("feature_", 1:actual_n_features)
+          ds$n_features <- actual_n_features
+          if(verbose) {
+            cat("  ✅ 已修正為", actual_n_features, "個特徵名稱\n")
+          }
+        }
+        
         # 時序切分
         sp <- time_cv(ds, test_ratio = SPLIT_CONFIG$test_ratio, 
                      val_ratio = SPLIT_CONFIG$val_ratio, verbose = verbose)

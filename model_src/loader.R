@@ -304,6 +304,22 @@ load_windows <- function(path, verbose = TRUE) {
       }
     }
     
+    # 驗證特徵數量一致性（修復關鍵問題）
+    actual_features <- dim(w$X_raw)[3]
+    provided_features <- length(w$features)
+    if(actual_features != provided_features) {
+      if(verbose) {
+        cat("⚠️  特徵數量不一致，重新生成特徵名稱\n")
+        cat("    資料維度:", actual_features, "個特徵\n")
+        cat("    提供的特徵名稱:", provided_features, "個\n")
+      }
+      # 強制重新生成特徵名稱以匹配實際維度
+      w$features <- paste0("feature_", 1:actual_features)
+      if(verbose) {
+        cat("  重新生成", actual_features, "個特徵名稱\n")
+      }
+    }
+    
     # 提取資料類型
     data_type <- if("data_type" %in% names(w)) {
       w$data_type
