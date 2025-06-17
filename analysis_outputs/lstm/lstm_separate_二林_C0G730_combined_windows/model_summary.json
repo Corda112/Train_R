@@ -1,0 +1,7 @@
+{
+  "model_type": ["LSTM"],
+  "test_rmse": ["NA"],
+  "model_size_mb": [0.91],
+  "data_type": ["separate"],
+  "station": ["二林_C0G730_combined_windows"]
+}

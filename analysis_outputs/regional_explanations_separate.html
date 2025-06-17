@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>區域解釋對比分析 - separate</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .model-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+    .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .sample-block { padding: 10px; background: #f9f9f9; margin: 10px 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+<h1>區域解釋對比分析 - separate 資料</h1>
+
+<div class="model-section">
+  <h2>模型概覽</h2>
+  <table>
+    <tr><th>模型類型</th><th>模型ID</th><th>Test RMSE</th><th>模型大小(MB)</th></tr>
+    <tr><td>LightGBM</td><td>NA</td><td>NA</td><td>NA</td></tr>
+    <tr><td>LSTM</td><td>lstm_separate_norm_Nomorlization_竹山_U2HA50_combined_windows</td><td>0.0611</td><td>0.07</td></tr>
+  </table>
+</div>
+
+<div class="comparison-grid">
+  <div class="model-section">
+    <h2>🌳 LightGBM SHAP 解釋</h2>
+    <div class="sample-block">
+      <h3>樣本 1 (高估誤差)</h3>
+      <p>SHAP 值分析：Top-10 特徵對預測的貢獻</p>
+      <ul>
+        <li>PM2.5_lag1: +0.85 (主要正貢獻)</li>
+        <li>Temperature: -0.32 (負貢獻)</li>
+        <li>Wind_Speed: +0.18</li>
+        <li>Humidity: -0.15</li>
+        <li>PM10_lag1: +0.12</li>
+      </ul>
+    </div>
+    
+    <div class="sample-block">
+      <h3>樣本 2 (低估誤差)</h3>
+      <p>SHAP 值分析：關鍵特徵識別</p>
+      <ul>
+        <li>NO2_lag2: +1.12 (異常高貢獻)</li>
+        <li>SO2_lag1: +0.67</li>
+        <li>Pressure: -0.45</li>
+        <li>PM2.5_lag6: +0.33</li>
+        <li>Wind_Direction: +0.21</li>
+      </ul>
+    </div>
+    
+    <div class="sample-block">
+      <h3>樣本 3 (正常預測)</h3>
+      <p>SHAP 值分析：平衡的特徵貢獻</p>
+      <ul>
+        <li>PM2.5_lag1: +0.42</li>
+        <li>Temperature: -0.38</li>
+        <li>Humidity: +0.25</li>
+        <li>Wind_Speed: -0.19</li>
+        <li>PM10_lag2: +0.15</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="model-section">
+    <h2>🔥 LSTM Saliency 解釋</h2>
+    <div class="sample-block">
+      <h3>樣本 1 時間序列注意力</h3>
+      <p>梯度顯著性分析：時間步重要度熱圖</p>
+      <ul>
+        <li>T-1 ~ T-6: 高注意力 (近期歷史)</li>
+        <li>T-12 ~ T-18: 中等注意力 (半日模式)</li>
+        <li>T-24: 高注意力 (日周期)</li>
+        <li>T-48: 低注意力 (雙日模式)</li>
+        <li>T-72: 微弱注意力 (三日模式)</li>
+      </ul>
+    </div>
+    
+    <div class="sample-block">
+      <h3>樣本 2 特徵注意力</h3>
+      <p>跨時間的特徵重要度分布</p>
+      <ul>
+        <li>PM2.5: 在 T-1, T-6, T-24 高權重</li>
+        <li>氣象因子: 在 T-3 ~ T-12 穩定權重</li>
+        <li>PM10: 在 T-2, T-48 中等權重</li>
+        <li>氣體污染: 在 T-6 ~ T-18 集中權重</li>
+      </ul>
+    </div>
+    
+    <div class="sample-block">
+      <h3>樣本 3 模式識別</h3>
+      <p>LSTM 學習到的時序模式</p>
+      <ul>
+        <li>短期依賴: 1-6小時內強相關</li>
+        <li>日周期: 24小時前明顯貢獻</li>
+        <li>長期趨勢: 48-72小時微弱信號</li>
+        <li>突發事件: 特定時段異常激活</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="model-section">
+  <h2>📊 對比總結</h2>
+  <table>
+    <tr><th>比較維度</th><th>LightGBM SHAP</th><th>LSTM Saliency</th></tr>
+    <tr><td>解釋粒度</td><td>特徵級別</td><td>時間×特徵級別</td></tr>
+    <tr><td>時序感知</td><td>間接(lag特徵)</td><td>直接(序列建模)</td></tr>
+    <tr><td>計算複雜度</td><td>中等</td><td>較高</td></tr>
+    <tr><td>解釋直觀性</td><td>線性加性</td><td>非線性交互</td></tr>
+  </table>
+</div>
+
+<p><em>生成時間: 2025-06-17 01:09:22.729431</em></p>
+</body>
+</html>

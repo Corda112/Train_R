@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AQI模型解釋性分析完整報告</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .metric-card { transition: transform 0.2s; }
+        .metric-card:hover { transform: translateY(-2px); }
+        .model-type-lgbm { border-left: 4px solid #28a745; }
+        .model-type-lstm { border-left: 4px solid #007bff; }
+        .comparison-section { background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">🎯 AQI模型解釋性分析完整報告</h1>
+                <p class="text-center text-muted">生成時間: 2025-06-16 02:22:44.020222</p>
+            </div>
+        </div>
+        
+        <!-- 基本統計 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card metric-card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">📊 總模型數</h5>
+                        <h2 class="text-primary">247</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">🌳 LightGBM</h5>
+                        <h2 class="text-success">123</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">🧠 LSTM</h5>
+                        <h2 class="text-info">124</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">✅ 可分析率</h5>
+                        <h2 class="text-warning">0%</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 模型註冊表 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>📋 模型註冊表</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>模型ID</th>
+                                        <th>類型</th>
+                                        <th>資料集</th>
+                                        <th>重要度檔案</th>
+                                        <th>狀態</th>
+                                    </tr>
+                                </thead>
+                                <tbody><tr class="model-type-lgbm">
+         <td><code>lgbm_combine_chunk_01</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>combine</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_combine_norm_chunk_01</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>combine</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_二林_C0G730_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_三重_C0AI30_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_三義_C0F9Q0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_土城_C0AD40_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_士林_C0AI40_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_大同_C0AI30_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_大里_C0F9N0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_大園_C0C590_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_大寮_C0V450_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_小港_C0V450_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_中山_C0AH70_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_中壢_A2C560_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_仁武_C0V680_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_斗六_C0K400_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_冬山_C0U910_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_古亭_C0AH10_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_左營_C0V810_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_平鎮_A2C560_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_永和_C0AH10_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_安南_467420_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_朴子_C0M650_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_汐止_C0AH00_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_竹山_U2HA50_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_竹東_C0D560_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_西屯_C0F9T0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_沙鹿_C0F9X0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_宜蘭_467080_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_忠明_C0F9U0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_松山_C0AC70_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_板橋_C0ACA0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_林口_C0AH50_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_林園_C0R640_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_花蓮_466990_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_金門_C0W150_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_前金_C0V690_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_前鎮_C0V490_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_南投_C0I460_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_屏東_C0R570_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_恆春_B2Q810_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_美濃_72V140_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_苗栗_C0E750_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_埔里_C0H890_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_桃園_C0C480_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_崙背_C0K250_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_淡水_466900_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_norm_Nomorlization_麥寮_A2K360_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_二林_C0G730_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_三重_C0AI30_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_三義_C0F9Q0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_土城_C0AD40_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_士林_C0AI40_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_大同_C0AI30_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_大里_C0F9N0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_大園_C0C590_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_大寮_C0V450_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_小港_C0V450_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_中山_C0AH70_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_中壢_A2C560_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_仁武_C0V680_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_斗六_C0K400_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_冬山_C0U910_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_古亭_C0AH10_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_左營_C0V810_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_平鎮_A2C560_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_永和_C0AH10_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_安南_467420_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_朴子_C0M650_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_汐止_C0AH00_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_竹山_U2HA50_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_竹東_C0D560_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_西屯_C0F9T0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_沙鹿_C0F9X0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_宜蘭_467080_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_忠明_C0F9U0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_松山_C0AC70_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_板橋_C0ACA0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_林口_C0AH50_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_林園_C0R640_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_花蓮_466990_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_金門_C0W150_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_前金_C0V690_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_前鎮_C0V490_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_南投_C0I460_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_屏東_C0R570_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_恆春_B2Q810_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_美濃_72V140_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_苗栗_C0E750_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_埔里_C0H890_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_桃園_C0C480_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_馬公_467350_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_馬祖_467990_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_基隆_466940_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_崙背_C0K250_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_淡水_466900_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_麥寮_A2K360_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_善化_C0O900_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_富貴角_C0AI20_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_復興_C0V710_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_湖口_C0D650_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_菜寮_C0AD30_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_陽明_466910_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_新竹_C0D660_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_新店_C0AC80_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_新莊_C0ACA0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_新港_C0M790_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_新營_C0X250_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_楠梓_C0V770_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_萬里_C0A940_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_萬華_466920_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_嘉義_C0M730_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_彰化_C0G910_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_臺西_C0K530_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_臺東_C0SA10_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_臺南_467410_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_潮州_C0R220_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_線西_C0G890_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_橋頭_C0V760_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_頭份_C0E420_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_龍潭_C0C670_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_豐原_C0F9M0_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lgbm">
+         <td><code>lgbm_separate_觀音_467050_combined_windows</code></td>
+         <td><span class="badge bg-success">LGBM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_combine_chunk_01</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>combine</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_combine_norm_chunk_01</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>combine</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_二林_C0G730_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_三重_C0AI30_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_三義_C0F9Q0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_土城_C0AD40_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_士林_C0AI40_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_大同_C0AI30_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_大里_C0F9N0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_大園_C0C590_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_大寮_C0V450_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_小港_C0V450_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_中山_C0AH70_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_中壢_A2C560_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_仁武_C0V680_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_斗六_C0K400_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_冬山_C0U910_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_古亭_C0AH10_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_左營_C0V810_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_平鎮_A2C560_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_永和_C0AH10_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_安南_467420_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_朴子_C0M650_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_汐止_C0AH00_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_竹山_U2HA50_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_竹東_C0D560_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_西屯_C0F9T0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_沙鹿_C0F9X0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_宜蘭_467080_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_忠明_C0F9U0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_松山_C0AC70_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_板橋_C0ACA0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_林口_C0AH50_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_林園_C0R640_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_花蓮_466990_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_金門_C0W150_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_前金_C0V690_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_前鎮_C0V490_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_南投_C0I460_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_屏東_C0R570_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_恆春_B2Q810_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_美濃_72V140_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_苗栗_C0E750_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_埔里_C0H890_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_桃園_C0C480_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_馬祖_467990_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_崙背_C0K250_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_淡水_466900_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_norm_Nomorlization_麥寮_A2K360_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_二林_C0G730_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_三重_C0AI30_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_三義_C0F9Q0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_土城_C0AD40_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_士林_C0AI40_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_大同_C0AI30_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_大里_C0F9N0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_大園_C0C590_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_大寮_C0V450_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_小港_C0V450_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_中山_C0AH70_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_中壢_A2C560_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_仁武_C0V680_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_斗六_C0K400_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_冬山_C0U910_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_古亭_C0AH10_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_左營_C0V810_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_平鎮_A2C560_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_永和_C0AH10_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_安南_467420_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_朴子_C0M650_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_汐止_C0AH00_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_竹山_U2HA50_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_竹東_C0D560_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_西屯_C0F9T0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_沙鹿_C0F9X0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_宜蘭_467080_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_忠明_C0F9U0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_松山_C0AC70_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_板橋_C0ACA0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_林口_C0AH50_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_林園_C0R640_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_花蓮_466990_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_金門_C0W150_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_前金_C0V690_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_前鎮_C0V490_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_南投_C0I460_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_屏東_C0R570_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_恆春_B2Q810_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_美濃_72V140_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_苗栗_C0E750_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_埔里_C0H890_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_桃園_C0C480_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_馬公_467350_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_馬祖_467990_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_基隆_466940_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_崙背_C0K250_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_淡水_466900_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_麥寮_A2K360_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_善化_C0O900_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_富貴角_C0AI20_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_復興_C0V710_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_湖口_C0D650_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_菜寮_C0AD30_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_陽明_466910_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_新竹_C0D660_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_新店_C0AC80_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_新莊_C0ACA0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_新港_C0M790_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_新營_C0X250_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_楠梓_C0V770_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_萬里_C0A940_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_萬華_466920_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_嘉義_C0M730_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_彰化_C0G910_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_臺西_C0K530_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_臺東_C0SA10_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_臺南_467410_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_潮州_C0R220_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_線西_C0G890_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_橋頭_C0V760_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_頭份_C0E420_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_龍潭_C0C670_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_豐原_C0F9M0_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr><tr class="model-type-lstm">
+         <td><code>lstm_separate_觀音_467050_combined_windows</code></td>
+         <td><span class="badge bg-info">LSTM</span></td>
+         <td>separate</td>
+         <td>❌</td>
+         <td><span class="badge bg-secondary">無重要度</span></td>
+       </tr>                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分析功能說明 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>🔍 分析功能說明</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-success">🌳 LightGBM模型分析</h6>
+                                <ul>
+                                    <li>✅ 特徵重要度分析</li>
+                                    <li>✅ SHAP值計算</li>
+                                    <li>✅ 特徵交互作用</li>
+                                    <li>✅ 跨模型特徵比較</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-info">🧠 LSTM模型分析</h6>
+                                <ul>
+                                    <li>✅ 梯度重要度分析</li>
+                                    <li>✅ 時間步貢獻分析</li>
+                                    <li>✅ 模型架構分析</li>
+                                    <li>✅ 性能比較分析</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

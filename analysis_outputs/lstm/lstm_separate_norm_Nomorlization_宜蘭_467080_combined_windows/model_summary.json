@@ -1,0 +1,7 @@
+{
+  "model_type": ["LSTM"],
+  "test_rmse": [0.1474],
+  "model_size_mb": [0.07],
+  "data_type": ["separate"],
+  "station": ["norm_Nomorlization_宜蘭_467080_combined_windows"]
+}

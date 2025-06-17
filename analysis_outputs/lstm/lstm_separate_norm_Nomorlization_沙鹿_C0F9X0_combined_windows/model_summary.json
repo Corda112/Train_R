@@ -1,0 +1,7 @@
+{
+  "model_type": ["LSTM"],
+  "test_rmse": [0.1021],
+  "model_size_mb": [0.07],
+  "data_type": ["separate"],
+  "station": ["norm_Nomorlization_沙鹿_C0F9X0_combined_windows"]
+}

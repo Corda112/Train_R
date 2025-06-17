@@ -1,0 +1,7 @@
+{
+  "model_type": ["LSTM"],
+  "test_rmse": ["NA"],
+  "model_size_mb": [0.9],
+  "data_type": ["separate"],
+  "station": ["新竹_C0D660_combined_windows"]
+}

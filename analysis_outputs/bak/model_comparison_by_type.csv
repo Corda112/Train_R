@@ -1,0 +1,5 @@
+dataset_type,model_type,best_rmse,worst_rmse,avg_rmse,model_count,best_model,avg_size_mb
+separate,lgbm,0.0538329644126883,3.75108322314008,1.78789708184956,121,lgbm_separate_norm_Nomorlization_竹山_U2HA50_combined_windows,35.1252066115703
+separate,lstm,0.0610554317984543,3.87484486868121,1.79123941417963,122,lstm_separate_norm_Nomorlization_竹山_U2HA50_combined_windows,0.0700819672131148
+combine,lgbm,0.0758511911005384,2.89578088794105,1.41245883466328,6,lgbm_combine_norm_chunk_02,126.343333333333
+combine,lstm,0.103118688079952,16.4425769022047,7.3039879413458,6,lstm_combine_norm_chunk_02,0.07

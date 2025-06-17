@@ -1,0 +1,6 @@
+model_id,model_type,dataset_type,estimated_rmse,has_importance,feature_count
+lgbm_combine_chunk_01,LightGBM,combine,33.4259631019086,TRUE,1583
+lgbm_combine_norm_chunk_01,LightGBM,combine,27.4609070364386,TRUE,1000
+lgbm_separate_norm_Nomorlization_三義_C0F9Q0_combined_windows,LightGBM,separate,31.454631513916,TRUE,441
+lgbm_separate_norm_Nomorlization_三重_C0AI30_combined_windows,LightGBM,separate,43.1612975802273,TRUE,1257
+lgbm_separate_norm_Nomorlization_中壢_A2C560_combined_windows,LightGBM,separate,26.1784692527726,TRUE,1040

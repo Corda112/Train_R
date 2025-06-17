@@ -1,0 +1,5 @@
+﻿model_type,dataset_type,model_count,best_rmse,worst_rmse,avg_rmse,rmse_std,best_station,worst_station
+lgbm,combine,6,0.0758511911005384,2.89578088794105,1.41245883466328,1.4514243296397,norm_chunk_02,chunk_03
+lgbm,separate,121,0.0538329644126883,3.75108322314008,1.78789708184956,1.35769340466378,norm_Nomorlization_竹山_U2HA50_combined_windows,崙背_C0K250_combined_windows
+lstm,combine,6,0.103118688079952,16.4425769022047,7.3039879413458,8.15043514581357,norm_chunk_02,chunk_03
+lstm,separate,122,0.0610554317984543,3.87484486868121,1.79123941417963,1.37456941075739,norm_Nomorlization_竹山_U2HA50_combined_windows,崙背_C0K250_combined_windows

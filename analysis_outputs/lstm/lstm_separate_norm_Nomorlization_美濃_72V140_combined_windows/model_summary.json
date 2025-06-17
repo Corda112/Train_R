@@ -1,0 +1,7 @@
+{
+  "model_type": ["LSTM"],
+  "test_rmse": [0.0731],
+  "model_size_mb": [0.07],
+  "data_type": ["separate"],
+  "station": ["norm_Nomorlization_美濃_72V140_combined_windows"]
+}

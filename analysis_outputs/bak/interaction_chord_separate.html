@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>特徵交互作用分析 - separate</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #chord-container { text-align: center; margin: 20px; }
+    .interaction-table { margin: 20px 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+<h1>LGBM 特徵交互作用 Chord Diagram - separate</h1>
+
+<div id="chord-container">
+  <h2>🎯 Top-10 特徵交互作用強度</h2>
+  <p><em>註：實際實施需要 SHAP interaction values 計算</em></p>
+  
+  <div class="interaction-table">
+    <h3>交互作用排名表</h3>
+    <table>
+      <tr><th>排名</th><th>特徵 1</th><th>特徵 2</th><th>交互強度</th><th>解釋</th></tr>
+      <tr><td>1</td><td>Humidity</td><td>Pressure</td><td>0.985</td><td>主要污染源交互</td></tr>
+      <tr><td>2</td><td>Pressure</td><td>Humidity</td><td>0.985</td><td>氣象調節效應</td></tr>
+      <tr><td>3</td><td>O3_lag1</td><td>Temperature</td><td>0.973</td><td>滯後效應組合</td></tr>
+      <tr><td>4</td><td>Temperature</td><td>O3_lag1</td><td>0.973</td><td>短期波動</td></tr>
+      <tr><td>5</td><td>NO2_lag1</td><td>Pressure</td><td>0.965</td><td>長期趨勢</td></tr>
+      <tr><td>6</td><td>Pressure</td><td>NO2_lag1</td><td>0.965</td><td>污染累積</td></tr>
+      <tr><td>7</td><td>PM2.5_lag1</td><td>PM10_lag1</td><td>0.955</td><td>擴散條件</td></tr>
+      <tr><td>8</td><td>PM10_lag1</td><td>PM2.5_lag1</td><td>0.955</td><td>化學反應</td></tr>
+      <tr><td>9</td><td>SO2_lag1</td><td>Temperature</td><td>0.833</td><td>季節模式</td></tr>
+      <tr><td>10</td><td>Temperature</td><td>SO2_lag1</td><td>0.833</td><td>區域傳輸</td></tr>
+    </table>
+  </div>
+</div>
+
+<div id="chord-diagram"></div>
+
+<script>
+// 這裡將來可以用 D3.js 繪製 chord diagram
+const data = [{"feature1":"Humidity","feature2":"Pressure","interaction_strength":0.9854},{"feature1":"Pressure","feature2":"Humidity","interaction_strength":0.9854},{"feature1":"O3_lag1","feature2":"Temperature","interaction_strength":0.9732},{"feature1":"Temperature","feature2":"O3_lag1","interaction_strength":0.9732},{"feature1":"NO2_lag1","feature2":"Pressure","interaction_strength":0.9646},{"feature1":"Pressure","feature2":"NO2_lag1","interaction_strength":0.9646},{"feature1":"PM2.5_lag1","feature2":"PM10_lag1","interaction_strength":0.955},{"feature1":"PM10_lag1","feature2":"PM2.5_lag1","interaction_strength":0.955},{"feature1":"SO2_lag1","feature2":"Temperature","interaction_strength":0.8329},{"feature1":"Temperature","feature2":"SO2_lag1","interaction_strength":0.8329}];
+
+// 簡化的視覺化代碼
+const container = d3.select("#chord-diagram");
+container.append("p")
+  .text("Chord Diagram 將在此處顯示特徵間的交互作用關係")
+  .style("text-align", "center")
+  .style("color", "#666")
+  .style("font-style", "italic");
+
+console.log("Interaction data:", data);
+</script>
+
+<p><em>生成時間: 2025-06-16 20:59:17.551238</em></p>
+</body>
+</html>

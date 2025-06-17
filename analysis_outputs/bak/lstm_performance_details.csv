@@ -1,0 +1,6 @@
+model_id,model_type,dataset_type,best_val_loss,training_time,input_size,seq_len,hidden_size,num_layers
+lstm_combine_chunk_01.pt,LSTM,combine,32.3889161423792,10.6035736203194,105,72,128,2
+lstm_combine_norm_chunk_01.pt,LSTM,combine,0.0137533210394786,4.00998491843542,105,72,128,2
+lstm_separate_norm_Nomorlization_三義_C0F9Q0_combined_windows.pt,LSTM,separate,0.00878375759074355,0.60918816725413,25,72,128,2
+lstm_separate_norm_Nomorlization_三重_C0AI30_combined_windows.pt,LSTM,separate,0.056741779889254,0.672055383523305,27,72,128,2
+lstm_separate_norm_Nomorlization_中壢_A2C560_combined_windows.pt,LSTM,separate,0.0312398206442595,0.791332848866781,25,72,128,2

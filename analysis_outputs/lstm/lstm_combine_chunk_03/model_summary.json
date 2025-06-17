@@ -1,0 +1,7 @@
+{
+  "model_type": ["LSTM"],
+  "test_rmse": ["NA"],
+  "model_size_mb": [1.06],
+  "data_type": ["combine"],
+  "station": ["chunk_03"]
+}

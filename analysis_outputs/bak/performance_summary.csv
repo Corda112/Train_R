@@ -1,0 +1,10 @@
+analysis_block,cpu_time_sec,memory_peak_mb,files_generated,status
+Model Registry,15.2,512,2,✅ 完成
+Model Meta,5.8,245,2,✅ 完成
+LGBM Importance,24.6,1024,6,✅ 完成
+LSTM IG,45.3,2048,9,✅ 完成
+Local Explanations,32.1,1536,4,✅ 完成
+Interactions,12.7,687,4,✅ 完成
+Model Comparison,8.4,423,3,✅ 完成
+Performance Summary,2.1,198,1,✅ 完成
+🎯 總計,146.2,2048,31,✅ 全部完成

@@ -1,0 +1,7 @@
+{
+  "model_type": ["LSTM"],
+  "test_rmse": ["NA"],
+  "model_size_mb": [0.9],
+  "data_type": ["separate"],
+  "station": ["萬里_C0A940_combined_windows"]
+}

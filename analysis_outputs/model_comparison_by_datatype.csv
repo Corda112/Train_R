@@ -1,0 +1,3 @@
+﻿dataset_type,best_rmse,model_count,best_model_type,best_model_id
+separate,0.0610554317984543,27,lstm,lstm_separate_norm_Nomorlization_竹山_U2HA50_combined_windows
+combine,0.103118688079952,3,lstm,lstm_combine_norm_chunk_02
